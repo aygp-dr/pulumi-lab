@@ -2,7 +2,7 @@
 #+AUTHOR: aygp-dr
 #+DATE: 2025-08-20
 #+STARTUP: overview
-#+PROPERTY: header-args :results output :exports both
+#+PROPERTY: header-args :results output :exports both :mkdirp yes
 
 [[https://img.shields.io/badge/status-experimental-orange.svg]]
 [[https://img.shields.io/badge/python-3.11-blue.svg]]
@@ -54,6 +54,8 @@ cd experiments/001-github-provider
 pulumi up
 #+end_src
 
+#+RESULTS:
+
 ** Project Structure
 
 #+begin_src bash :results verbatim
@@ -91,10 +93,16 @@ which uv || echo "uv not installed"
 #+begin_src bash :dir . :results verbatim
 # Install dependencies
 gmake install setup-hy
-
-# Configure Pulumi backend
-pulumi login --local
 #+end_src
+
+
+#+begin_src bash :dir . :results verbatim
+# Configure Pulumi backend
+pulumi login --local | sed -e 's#FCP.*local#<redacted>#'
+#+end_src
+
+#+RESULTS:
+: Logged in to <redacted> as jason.walsh (file://~)
 
 *** Verify Hy Installation
 
@@ -102,6 +110,10 @@ pulumi login --local
 (print "Hy is working!")
 (print f"Python interop: {(+ 2 2)}")
 #+end_src
+
+#+RESULTS:
+: Hy is working!
+: Python interop: 4
 
 ** [0:10-0:20] Core Concepts with Hy
    :PROPERTIES:
