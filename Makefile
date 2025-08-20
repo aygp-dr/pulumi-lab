@@ -62,3 +62,16 @@ clean:
 	find . -type d -name ".pulumi" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "Pulumi.*.yaml" -delete
+
+# Documentation publishing
+publish-readme: ## Publish README.org files to README.md using Emacs
+	@echo "📚 Publishing README.org files to README.md"
+	@./scripts/publish-readme.sh
+
+publish-readme-python: ## Publish README.org files using Python script
+	@echo "📚 Publishing README.org files via Python"
+	@uv run scripts/publish-readme.py
+
+watch-readme: ## Watch README.org files and auto-publish on changes
+	@echo "👁️  Watching README.org files for changes..."
+	@fswatch -r --event=Updated . -i ".*README\.org$$" | xargs -I {} ./scripts/publish-readme.sh {}

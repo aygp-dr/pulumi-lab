@@ -1,13 +1,28 @@
 [project]
 name = "pulumi-lab"
 version = "0.1.0"
-description = "Pulumi experiments with Hy language support"
-requires-python = ">=3.8"
+description = "🧪 EXPERIMENTAL Pulumi Infrastructure as Code with Hy (Python 3.11 + Hy 1.0.0)"
+readme = "README.org"
+requires-python = ">=3.11"
+authors = [
+    {name = "aygp-dr"}
+]
+keywords = ["pulumi", "hy", "infrastructure", "experimental", "freebsd"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: System :: Systems Administration",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+]
 dependencies = [
     "pulumi>=3.0.0",
     "pulumi-github>=6.0.0",
     "pulumi-aws>=6.0.0",
-    "hy>=0.28.0",
+    "pulumi-policy>=1.0.0",
+    "hy>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -16,6 +31,17 @@ dev = [
     "black>=23.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
+    "ipython>=8.0.0",
+]
+automation = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "click>=8.0.0",
+    "requests>=2.30.0",
+    "pydantic>=2.0.0",
+]
+policy = [
+    "pulumi-policy>=1.0.0",
 ]
 
 [build-system]
@@ -27,15 +53,27 @@ dev-dependencies = [
     "ipython>=8.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/aygp-dr/pulumi-lab"
+Repository = "https://github.com/aygp-dr/pulumi-lab.git"
+Issues = "https://github.com/aygp-dr/pulumi-lab/issues"
+Documentation = "https://github.com/aygp-dr/pulumi-lab/blob/main/README.org"
+
+[project.scripts]
+publish-readme = "scripts.publish_readme:main"
+
 [tool.ruff]
-line-length = 120
-target-version = "py38"
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "W", "I", "N", "B", "C"]
+ignore = ["E501", "B008"]
 
 [tool.black]
-line-length = 120
-target-version = ["py38"]
+line-length = 88
+target-version = ["py311"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
+disallow_untyped_defs = true

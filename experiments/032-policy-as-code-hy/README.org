@@ -1,0 +1,468 @@
+#+TITLE: Policy as Code with Pulumi CrossGuard and Snyk
+#+AUTHOR: Pulumi Lab
+#+DATE: 2025-08-20
+#+STARTUP: overview
+#+OPTIONS: toc:2 num:nil
+
+* Experiment Overview
+
+This experiment demonstrates comprehensive policy as code implementation using Pulumi CrossGuard and Snyk integration for infrastructure security and compliance.
+
+** What's Included
+
+- *Custom CrossGuard Policies*: Security and compliance rules written in Python
+- *Compliance-Ready Policies*: Integration with industry standards (ISO 27001, PCI DSS, GDPR, SOC 2)
+- *Snyk Integration*: Security vulnerability scanning for infrastructure code
+- *Hy Language Infrastructure*: Resources designed to trigger policy violations
+- *Comprehensive Testing*: Policy validation and testing strategies
+- *CI/CD Integration*: Examples for automated policy enforcement
+
+** Key Learning Objectives
+
+1. Understand Pulumi CrossGuard policy framework
+2. Implement custom security policies 
+3. Integrate with Snyk for vulnerability scanning
+4. Map policies to compliance frameworks
+5. Test and validate policy effectiveness
+6. Automate policy enforcement in CI/CD
+
+* Project Structure
+
+#+begin_example
+032-policy-as-code-hy/
+├── Pulumi.yaml                   # Stack configuration
+├── __main__.hy                   # Infrastructure with policy violations  
+├── policies/                     # CrossGuard policy pack
+│   ├── PulumiPolicy.yaml        # Policy pack configuration
+│   └── __main__.py              # Custom security policies
+├── compliance-policies/          # Compliance-ready policies
+│   └── __main__.py              # Industry standard policies
+├── snyk-policies/               # Snyk policy configuration
+│   └── .snyk                    # Snyk policy file
+├── snyk-integration.yaml        # Snyk integration config
+├── policy-demo.py              # Comprehensive demo script
+└── README.org                  # This file
+#+end_example
+
+* Quick Start
+
+** Prerequisites
+
+#+begin_src bash :results output
+# Required tools
+pulumi --version    # Pulumi CLI
+python --version    # Python 3.8+
+pip --version       # Python package manager
+
+# Optional tools  
+snyk --version      # Snyk CLI (install: npm install -g snyk)
+hy --version        # Hy language (install: pip install hy)
+#+end_src
+
+** Installation
+
+1. *Install Policy Dependencies*
+   #+begin_src bash
+   pip install pulumi-policy pulumi-aws
+   #+end_src
+
+2. *Set up Pulumi Stack*
+   #+begin_src bash
+   pulumi stack init policy-demo
+   pulumi config set aws:region us-east-1
+   #+end_src
+
+3. *Configure LocalStack (Optional)*
+   #+begin_src bash
+   # Start LocalStack for local testing
+   gmake localstack-start  # From project root
+   #+end_src
+
+** Basic Usage
+
+1. *Run Complete Demo*
+   #+begin_src bash
+   python policy-demo.py
+   #+end_src
+
+2. *Run Specific Components*
+   #+begin_src bash
+   python policy-demo.py check      # Check prerequisites
+   python policy-demo.py policies   # Test policies
+   python policy-demo.py snyk       # Run Snyk scanning
+   python policy-demo.py analyze    # Analyze violations
+   #+end_src
+
+* Policy Categories
+
+** Custom CrossGuard Policies
+
+Our custom policies cover:
+
+*** S3 Security
+- ✅ Block public access on all buckets
+- ✅ Require versioning for data protection  
+- ✅ Enforce server-side encryption
+- ✅ Validate bucket naming conventions
+
+*** IAM Security  
+- ✅ Prohibit wildcard permissions (~*:*~)
+- ✅ Enforce managed policies over inline policies
+- ✅ Validate role trust relationships
+
+*** Lambda Security
+- ✅ Detect hardcoded secrets in environment variables
+- ✅ Enforce reasonable timeout limits
+- ✅ Require encryption for environment variables
+
+*** Network Security
+- ✅ Enforce HTTPS on load balancers
+- ✅ Restrict security group ingress rules
+- ✅ Validate network segmentation
+
+*** Database Security
+- ✅ Require RDS encryption at rest
+- ✅ Prohibit public database access
+- ✅ Enforce backup retention policies
+
+** Compliance Framework Mappings
+
+*** ISO 27001
+- Information security management controls
+- Encryption requirements (A.10.1.1)
+- Access control policies (A.9.1.1)
+- Network security controls (A.13.1.1)
+
+*** PCI DSS
+- Payment card data protection
+- Network security requirements (Req 1.3)
+- Encryption in transit (Req 4.1)  
+- Access control measures (Req 7.1)
+
+*** GDPR
+- Data protection by design (Art 25)
+- Encryption requirements (Art 32)
+- Data breach notification (Art 33)
+- Right to data portability (Art 20)
+
+*** SOC 2
+- Security (Trust Service Criteria)
+- Availability (CC6.1)
+- Processing integrity (CC8.1)
+- Confidentiality controls
+
+* Running Policy Validation
+
+** CrossGuard Policies
+
+1. *Preview with Policies*
+   #+begin_src bash
+   pulumi preview --policy-pack ./policies
+   #+end_src
+
+2. *Deploy with Policy Enforcement*
+   #+begin_src bash
+   pulumi up --policy-pack ./policies
+   #+end_src
+
+3. *Use Multiple Policy Packs*
+   #+begin_src bash
+   pulumi up --policy-pack ./policies --policy-pack ./compliance-policies
+   #+end_src
+
+** Snyk Integration
+
+1. *Basic IaC Scanning*
+   #+begin_src bash
+   snyk iac test .
+   #+end_src
+
+2. *Scan with Custom Policies*
+   #+begin_src bash
+   snyk iac test . --policy-path=./snyk-policies
+   #+end_src
+
+3. *Generate Reports*
+   #+begin_src bash
+   snyk iac test . --json > snyk-results.json
+   snyk iac test . --sarif > snyk-results.sarif
+   #+end_src
+
+4. *Monitor Project*
+   #+begin_src bash
+   snyk monitor --file=Pulumi.yaml
+   #+end_src
+
+* Policy Testing
+
+** Unit Testing Policies
+
+#+begin_src python
+# Test individual policy rules
+def test_s3_public_access_policy():
+    private_bucket = {
+        "resource_type": "aws:s3/bucketPublicAccessBlock:BucketPublicAccessBlock",
+        "props": {"blockPublicAcls": True}
+    }
+    assert policy_passes(s3_bucket_public_access_block, private_bucket)
+#+end_src
+
+** Integration Testing
+
+#+begin_src python
+# Test policy enforcement in stacks
+async def test_stack_policy_enforcement():
+    stack = auto.create_stack(
+        stack_name="policy-test",
+        program=create_test_infrastructure
+    )
+    
+    with pytest.raises(PolicyViolationError):
+        await stack.up(policy_packs=["./policies"])
+#+end_src
+
+** Running Tests
+
+#+begin_src bash
+# Run policy tests
+python -m pytest policies/tests/ -v
+
+# Run integration tests
+python -m pytest tests/integration/ -v
+#+end_src
+
+* CI/CD Integration
+
+** GitHub Actions
+
+#+begin_src yaml
+name: Infrastructure Policy Validation
+on: [push, pull_request]
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Pulumi
+      uses: pulumi/action@v3
+      
+    - name: Policy Validation
+      run: pulumi preview --policy-pack ./policies
+      env:
+        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        
+    - name: Snyk IaC Scan
+      run: snyk iac test . --severity-threshold=medium
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#+end_src
+
+** Pre-commit Hooks
+
+#+begin_src yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: pulumi-policy-check
+        name: Pulumi Policy Check
+        entry: pulumi preview --policy-pack ./policies
+        language: system
+#+end_src
+
+* Common Policy Violations
+
+** Critical Violations (Deployment Blocking)
+
+1. *Wildcard IAM Permissions*
+   #+begin_src json
+   {
+     "Action": "*",
+     "Resource": "*"
+   }
+   #+end_src
+   *Fix*: Use least-privilege specific permissions
+
+2. *Unrestricted Security Groups*
+   #+begin_src python
+   cidr_ipv4="0.0.0.0/0"
+   from_port=0
+   to_port=65535
+   #+end_src
+   *Fix*: Restrict to specific IP ranges and ports
+
+3. *Hardcoded Secrets*
+   #+begin_src python
+   environment_variables={
+     "SECRET_KEY": "hardcoded-secret-123"
+   }
+   #+end_src
+   *Fix*: Use AWS Secrets Manager or Parameter Store
+
+** High Violations (Advisory)
+
+1. *Unencrypted Storage*
+   #+begin_src python
+   storage_encrypted=False
+   #+end_src
+   *Fix*: Enable encryption at rest
+
+2. *HTTP-only Load Balancers*
+   #+begin_src python
+   protocol="HTTP"
+   #+end_src
+   *Fix*: Use HTTPS with SSL certificates
+
+* Policy Reporting
+
+** Violation Summary Report
+
+The demo generates comprehensive reports showing:
+
+- *Severity Distribution*: Critical, High, Medium, Low violations
+- *Resource Coverage*: Which resources have policy coverage
+- *Compliance Status*: Adherence to specific frameworks
+- *Remediation Guidance*: Step-by-step fix instructions
+
+** Example Report Output
+
+#+begin_example
+Policy Violations Found: 12
+├── Critical: 3 (RDS encryption, Security groups, IAM wildcards)
+├── High: 4 (S3 public access, HTTP listeners)  
+├── Medium: 3 (Versioning, Inline policies)
+└── Low: 2 (Backup retention, Naming conventions)
+
+Compliance Status:
+├── ISO 27001: 75% compliant (3 violations)
+├── PCI DSS: 60% compliant (4 violations)
+└── GDPR: 85% compliant (2 violations)
+#+end_example
+
+* Advanced Features
+
+** Dynamic Policy Configuration
+
+Policies can be configured per environment:
+
+#+begin_src yaml
+# Pulumi.dev.yaml
+config:
+  policy-pack:enforcement-level: "advisory"
+  policy-pack:max-s3-buckets: 10
+
+# Pulumi.prod.yaml  
+config:
+  policy-pack:enforcement-level: "mandatory"
+  policy-pack:max-s3-buckets: 5
+#+end_src
+
+** Custom Policy Development
+
+Create new policies by extending the framework:
+
+#+begin_src python
+def custom_naming_policy(args, report_violation, config):
+    """Enforce organizational naming conventions"""
+    if args.resource_type.startswith("aws:"):
+        props = args.get("props", {})
+        name = props.get("name", "")
+        
+        if not re.match(r'^[a-z0-9-]+$', name):
+            report_violation(
+                f"Resource name '{name}' doesn't follow naming convention",
+                EnforcementLevel.MANDATORY
+            )
+#+end_src
+
+** Integration with External Tools
+
+- *HashiCorp Sentinel*: Policy as code for Terraform compatibility
+- *Open Policy Agent (OPA)*: General-purpose policy engine
+- *Checkov*: Static analysis for infrastructure code
+- *tfsec*: Security scanner for Terraform
+
+* Learning Resources
+
+** Essential Reading
+
+1. *Policy as Code Fundamentals*
+   - [[https://www.pulumi.com/docs/iac/crossguard/][Pulumi CrossGuard Documentation]]
+   - [[https://www.pulumi.com/blog/policy-as-code/][Policy as Code Best Practices]]
+
+2. *Security & Compliance*
+   - [[https://aws.amazon.com/security/security-resources/][AWS Security Best Practices]]
+   - [[https://www.gartner.com/en/information-technology/glossary/cloud-security-posture-management-cspm][Cloud Security Posture Management]]
+
+3. *Snyk Integration*
+   - [[https://snyk.io/product/infrastructure-as-code-security/][Snyk Infrastructure as Code]]
+   - [[https://www.pulumi.com/docs/iac/crossguard/snyk-policy/][Pulumi Snyk Integration]]
+
+** Hands-on Practice
+
+1. *Create Custom Policies*: Start with simple rules and expand
+2. *Test Policy Edge Cases*: Ensure policies work correctly
+3. *Integrate with CI/CD*: Automate policy enforcement
+4. *Benchmark Performance*: Measure policy execution impact
+
+* Troubleshooting
+
+** Common Issues
+
+1. *Policy Pack Not Found*
+   #+begin_src bash
+   # Ensure policy pack directory exists
+   ls -la ./policies/
+   
+   # Check PulumiPolicy.yaml is present
+   cat ./policies/PulumiPolicy.yaml
+   #+end_src
+
+2. *Snyk Authentication*
+   #+begin_src bash
+   # Authenticate with Snyk
+   snyk auth
+   
+   # Or set token environment variable
+   export SNYK_TOKEN="your-token-here"
+   #+end_src
+
+3. *Policy Execution Errors*
+   #+begin_src bash
+   # Validate policy syntax
+   pulumi policy validate ./policies
+   
+   # Run with verbose logging
+   pulumi preview --policy-pack ./policies --logtostderr -v=9
+   #+end_src
+
+** Performance Optimization
+
+- *Policy Caching*: Reuse policy evaluations where possible
+- *Selective Enforcement*: Apply policies only to relevant resources
+- *Parallel Execution*: Run policy checks concurrently
+
+* Next Steps
+
+1. *Expand Policy Coverage*: Add more resource types and rules
+2. *Implement Policy Testing*: Create comprehensive test suites  
+3. *Custom Compliance Frameworks*: Develop organization-specific rules
+4. *Policy Analytics*: Track violation trends and remediation
+5. *Advanced Integrations*: Connect with SIEM and monitoring tools
+
+* Contributing
+
+To extend this experiment:
+
+1. *Add New Policies*: Create rules for additional AWS services
+2. *Enhance Testing*: Improve policy validation coverage
+3. *Documentation*: Add examples for specific use cases
+4. *Integration*: Connect with additional security tools
+
+---
+
+*Happy Policy Coding!* 🚀
+
+For questions or issues, refer to the main Pulumi Lab documentation or create an issue in the project repository.

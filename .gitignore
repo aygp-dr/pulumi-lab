@@ -41,3 +41,8 @@ Thumbs.db
 # Temporary
 tmp/
 temp/
+
+# Auto-generated documentation
+README.md
+**/README.md
+!research/**/README.md

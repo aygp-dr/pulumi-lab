@@ -4,9 +4,25 @@
 #+STARTUP: overview
 #+PROPERTY: header-args :results output :exports both
 
+[[https://img.shields.io/badge/status-experimental-orange.svg]]
+[[https://img.shields.io/badge/python-3.11-blue.svg]]
+[[https://img.shields.io/badge/hy-1.0.0-purple.svg]]
+[[https://img.shields.io/badge/pulumi-latest-blueviolet.svg]]
+[[https://img.shields.io/badge/platform-FreeBSD-red.svg]]
+[[https://img.shields.io/badge/localstack-supported-green.svg]]
+
 * Overview
 
-Exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD.
+⚠️ *EXPERIMENTAL PROJECT* ⚠️
+
+This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD. The project demonstrates advanced IaC patterns, policy as code, and automation API capabilities.
+
+*Current Environment:*
+- Python 3.11.11
+- Hy 1.0.0  
+- Pulumi latest
+- FreeBSD 14.3-RELEASE
+- LocalStack for local development
 
 ** Quick Start
 
@@ -757,13 +773,56 @@ pulumi stack output
 pulumi logs -f
 #+end_src
 
+** Latest Experiments
+
+*** 032-policy-as-code-hy: Comprehensive Policy as Code
+**** CrossGuard & Snyk Integration
+- Custom security policies in Python
+- Compliance framework mapping (ISO 27001, PCI DSS, GDPR, SOC 2)
+- Snyk vulnerability scanning integration  
+- Comprehensive policy testing and validation
+- CI/CD integration patterns
+
+#+begin_src bash :dir experiments/032-policy-as-code-hy :results output
+# Quick policy demonstration
+python policy-demo.py check
+
+# Run complete demo with policy violations
+python policy-demo.py
+#+end_src
+
+**** Key Policy Categories
+- **S3 Security**: Public access, encryption, versioning
+- **IAM Security**: Wildcard permissions, inline policies
+- **Lambda Security**: Hardcoded secrets, timeout limits
+- **Network Security**: HTTPS enforcement, security groups  
+- **Database Security**: RDS encryption, public access
+
+*** 031-automation-api-hy: Enhanced Automation API
+**** S3 Website Pattern with LocalStack
+- Advanced S3 website configuration with ownership controls
+- macOS LocalStack optimization (s3-force-path-style)
+- Programmatic infrastructure management
+- Multi-environment CI/CD simulation
+- GitHub Actions workflow generation
+
+#+begin_src bash :dir experiments/031-automation-api-hy :results output
+# Run enhanced automation API demo
+python __main__.py
+
+# Test LocalStack integration  
+hy __main__.hy
+#+end_src
+
 * Notes
 
 This workshop provides hands-on experience with:
 - Pulumi fundamentals using Hy language
-- Multi-cloud resource management
-- Policy as code
-- Component abstractions
-- Production patterns
+- Multi-cloud resource management  
+- Policy as code with CrossGuard and Snyk
+- Automation API for programmatic deployments
+- Component abstractions and reusable patterns
+- LocalStack integration for cost-free development
+- Production-ready CI/CD integration
 
 All code blocks are executable in Emacs with org-babel.

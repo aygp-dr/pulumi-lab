@@ -1,0 +1,27 @@
+name: pulumi-lab-policies
+displayName: "Pulumi Lab Security and Compliance Policies"
+description: "Security and compliance policies for Pulumi Lab infrastructure"
+version: "1.0.0"
+runtime: python
+main: __main__.py
+
+config:
+  enforcement-level:
+    type: string
+    description: "Policy enforcement level (advisory, mandatory)"
+    default: "mandatory"
+  
+  max-s3-buckets:
+    type: number
+    description: "Maximum number of S3 buckets allowed per stack"
+    default: 5
+    
+  require-https:
+    type: boolean
+    description: "Require HTTPS for all load balancers"
+    default: true
+    
+  require-encryption:
+    type: boolean
+    description: "Require encryption for storage resources"
+    default: true

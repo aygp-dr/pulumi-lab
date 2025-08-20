@@ -1,0 +1,33 @@
+name: policy-as-code
+runtime: python
+description: Policy as Code with CrossGuard and Snyk integration
+
+config:
+  app-name:
+    type: string
+    description: Application name for policy demonstrations
+    default: "policy-demo"
+  
+  enforce-https:
+    type: boolean
+    description: Enforce HTTPS for all resources
+    default: true
+    
+  max-bucket-count:
+    type: number
+    description: Maximum number of S3 buckets allowed
+    default: 5
+
+template:
+  description: Policy as Code template with CrossGuard and Snyk
+  important: |
+    This experiment demonstrates:
+    - Pulumi CrossGuard policy enforcement
+    - Snyk security policy integration  
+    - Custom policy rules in Python/Hy
+    - Policy violations and remediation
+    
+    Key commands:
+    - pulumi up --policy-pack ./policies
+    - pulumi preview --policy-pack ./policies
+    - snyk iac test . --policy-path=./snyk-policies

@@ -1,0 +1,96 @@
+# Snyk (https://snyk.io) policy file
+# Defines security policy for Pulumi infrastructure
+version: v1.0.0
+
+# Ignored vulnerabilities and misconfigurations
+ignore:
+  # Temporary ignores for demo purposes
+  SNYK-CC-TF-1: # S3 bucket versioning
+    - '*':
+        reason: "Versioning not required for demo buckets"
+        expires: '2025-12-31T23:59:59.999Z'
+
+# Custom rules for infrastructure security
+rules:
+  # S3 Security Rules
+  - id: SNYK-CC-AWS-S3-01
+    severity: high
+    title: "S3 bucket should not be public"
+    description: "Ensure S3 buckets are not publicly readable or writable"
+    
+  - id: SNYK-CC-AWS-S3-02  
+    severity: medium
+    title: "S3 bucket should have versioning enabled"
+    description: "Enable versioning on S3 buckets for data protection"
+    
+  - id: SNYK-CC-AWS-S3-03
+    severity: high
+    title: "S3 bucket should have encryption enabled"
+    description: "Enable server-side encryption for S3 buckets"
+
+  # IAM Security Rules
+  - id: SNYK-CC-AWS-IAM-01
+    severity: critical
+    title: "IAM policy should not have wildcard permissions"
+    description: "Avoid using '*' in IAM policy actions and resources"
+    
+  - id: SNYK-CC-AWS-IAM-02
+    severity: medium
+    title: "IAM roles should use managed policies"
+    description: "Prefer managed policies over inline policies for better governance"
+
+  # Lambda Security Rules
+  - id: SNYK-CC-AWS-LAMBDA-01
+    severity: high
+    title: "Lambda should not have hardcoded secrets"
+    description: "Avoid hardcoding secrets in Lambda environment variables"
+    
+  - id: SNYK-CC-AWS-LAMBDA-02
+    severity: low
+    title: "Lambda timeout should be reasonable"
+    description: "Lambda timeout should not exceed recommended limits"
+
+  # Load Balancer Security Rules
+  - id: SNYK-CC-AWS-ALB-01
+    severity: medium
+    title: "Load balancer should use HTTPS"
+    description: "ALB listeners should use HTTPS instead of HTTP"
+
+  # Security Group Rules
+  - id: SNYK-CC-AWS-SG-01
+    severity: critical
+    title: "Security group should not allow unrestricted access"
+    description: "Avoid 0.0.0.0/0 CIDR blocks in security group ingress rules"
+
+  # RDS Security Rules
+  - id: SNYK-CC-AWS-RDS-01
+    severity: high
+    title: "RDS should have encrypted storage"
+    description: "Enable encryption at rest for RDS instances"
+    
+  - id: SNYK-CC-AWS-RDS-02
+    severity: critical
+    title: "RDS should not be publicly accessible"
+    description: "RDS instances should not be publicly accessible"
+    
+  - id: SNYK-CC-AWS-RDS-03
+    severity: medium
+    title: "RDS should have backup retention"
+    description: "Configure backup retention for RDS instances"
+
+# Patch directives (if applicable)
+patches: []
+
+# License policy (for dependencies)
+license:
+  # Define acceptable licenses
+  allow:
+    - MIT
+    - Apache-2.0
+    - BSD-3-Clause
+    - ISC
+  
+  # Disallowed licenses
+  disallow:
+    - GPL-*
+    - AGPL-*

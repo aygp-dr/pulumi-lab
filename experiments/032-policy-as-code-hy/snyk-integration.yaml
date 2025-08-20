@@ -1,0 +1,209 @@
+# Snyk Integration Configuration for Pulumi
+# Based on: https://www.pulumi.com/docs/iac/crossguard/snyk-policy/
+
+# Snyk configuration for Infrastructure as Code scanning
+apiVersion: v1
+kind: SnykConfig
+metadata:
+  name: pulumi-lab-snyk-config
+  description: "Snyk IaC scanning configuration for Pulumi Lab"
+
+# Snyk CLI configuration
+snyk:
+  version: "latest"
+  
+  # Authentication (use environment variable SNYK_TOKEN)
+  auth:
+    method: "token"
+    # token: "${SNYK_TOKEN}" - set as environment variable
+  
+  # Organization settings
+  org: "pulumi-lab"  # Replace with your Snyk organization
+  
+  # Project settings
+  project:
+    name: "policy-as-code-demo"
+    tags:
+      - "pulumi"
+      - "infrastructure"
+      - "security"
+      - "compliance"
+
+# IaC scanning configuration
+iac:
+  # File patterns to scan
+  include:
+    - "**/*.py"
+    - "**/*.hy"
+    - "**/Pulumi.yaml"
+    - "**/PulumiPolicy.yaml"
+    
+  # File patterns to exclude
+  exclude:
+    - "**/node_modules/**"
+    - "**/.pulumi/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    
+  # Severity threshold
+  severity-threshold: "medium"  # low, medium, high, critical
+  
+  # Report formats
+  formats:
+    - "json"
+    - "sarif"
+    - "html"
+  
+  # Rules configuration
+  rules:
+    # Enable all AWS security rules
+    aws: "enabled"
+    
+    # Specific rule categories
+    encryption: "enabled"
+    network-security: "enabled" 
+    access-control: "enabled"
+    logging: "enabled"
+    backup: "enabled"
+
+# Integration with Pulumi workflows
+pulumi-integration:
+  # Run Snyk scan on specific Pulumi commands
+  hooks:
+    pre-preview: true   # Run before pulumi preview
+    pre-up: true       # Run before pulumi up
+    post-up: false     # Run after pulumi up
+  
+  # Policy enforcement
+  enforcement:
+    block-on-critical: true    # Block deployment on critical issues
+    block-on-high: false      # Allow high severity issues
+    advisory-on-medium: true  # Show advisory for medium issues
+  
+  # Reporting
+  reporting:
+    console: true
+    file: "./snyk-results.json"
+    upload-to-snyk: true
+
+# Custom rules for Pulumi-specific patterns
+custom-rules:
+  - id: "PULUMI-001"
+    title: "Pulumi stack names should follow naming convention"
+    description: "Stack names should include environment and application identifiers"
+    severity: "low"
+    pattern: "^[a-z0-9-]+-(dev|staging|prod)$"
+    
+  - id: "PULUMI-002" 
+    title: "Pulumi exports should not contain sensitive data"
+    description: "Stack exports should not include passwords or keys"
+    severity: "high"
+    patterns:
+      - "password"
+      - "secret"
+      - "key"
+      - "token"
+      
+  - id: "PULUMI-003"
+    title: "LocalStack provider should only be used in development"
+    description: "LocalStack endpoints should not be used in production stacks"
+    severity: "critical"
+    condition: "stack != 'dev' && provider.contains('localhost:4566')"
+
+# Compliance framework mappings
+compliance:
+  frameworks:
+    iso27001:
+      enabled: true
+      rules:
+        - "SNYK-CC-AWS-S3-*"  # All S3 rules
+        - "SNYK-CC-AWS-RDS-*" # All RDS rules
+        
+    pci-dss:
+      enabled: true
+      rules:
+        - "SNYK-CC-AWS-ALB-*" # Load balancer rules
+        - "SNYK-CC-AWS-SG-*"  # Security group rules
+        
+    gdpr:
+      enabled: true
+      rules:
+        - "SNYK-CC-AWS-S3-01" # S3 encryption
+        - "SNYK-CC-AWS-RDS-01" # RDS encryption
+        
+    soc2:
+      enabled: true
+      rules:
+        - "SNYK-CC-AWS-LAMBDA-*" # Lambda security
+        - "SNYK-CC-AWS-IAM-*"    # IAM security
+
+# Monitoring and alerting
+monitoring:
+  # Alert channels
+  alerts:
+    slack:
+      enabled: false
+      webhook-url: "${SLACK_WEBHOOK_URL}"
+      channels:
+        - "#security-alerts"
+        - "#infrastructure"
+    
+    email:
+      enabled: false
+      recipients:
+        - "security@company.com"
+        - "devops@company.com"
+  
+  # Metrics and reporting
+  metrics:
+    track-trends: true
+    historical-comparison: true
+    benchmark-against-industry: true
+
+# CI/CD Integration patterns
+ci-cd:
+  github-actions:
+    workflow-file: ".github/workflows/snyk-iac-scan.yml"
+    run-on:
+      - "pull_request"
+      - "push:main"
+      - "schedule:weekly"
+  
+  gitlab-ci:
+    include: "snyk-iac-scanning.yml"
+    stages:
+      - "security-scan"
+      - "policy-check"
+  
+  jenkins:
+    pipeline-stage: "IaC Security Scan"
+    post-actions:
+      - "archive-results"
+      - "notify-teams"
+
+---
+# Example Snyk command configurations
+commands:
+  # Basic IaC scanning
+  basic-scan: "snyk iac test ."
+  
+  # Scan with custom severity
+  medium-plus: "snyk iac test . --severity-threshold=medium"
+  
+  # Scan with specific policies
+  custom-policies: "snyk iac test . --policy-path=./snyk-policies"
+  
+  # Scan and monitor
+  scan-and-monitor: "snyk iac test . && snyk monitor --file=Pulumi.yaml"
+  
+  # Scan specific files
+  scan-pulumi-files: "snyk iac test **/*Pulumi*.yaml **/*.py"
+  
+  # Generate reports
+  generate-reports: |
+    snyk iac test . --json > snyk-results.json
+    snyk iac test . --sarif > snyk-results.sarif
+    snyk iac test . > snyk-results.txt
+    
+  # Describe current infrastructure
+  describe-infrastructure: "snyk iac describe . --all-projects"
