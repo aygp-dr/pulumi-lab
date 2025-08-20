@@ -1,0 +1,51 @@
+name: ssm-secrets-localstack-hy
+runtime: python
+description: SSM Parameter Store secrets management with LocalStack testing in Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+
+config:
+  app-name:
+    type: string
+    description: Application name for parameter organization
+    default: "workshop"
+  
+  # Secret configuration examples
+  dbPassword:
+    type: string
+    description: Database password (set with --secret flag)
+    secret: true
+  
+  apiKey:
+    type: string
+    description: External API key (set with --secret flag)
+    secret: true
+    default: ""
+  
+  sshPrivateKey:
+    type: string
+    description: SSH private key content (set with --secret flag)
+    secret: true
+    default: ""
+
+template:
+  description: SSM Parameter Store with LocalStack template
+  config:
+    examples: |
+      Set secrets with Pulumi config:
+      
+      pulumi config set --secret dbPassword S3cr37
+      pulumi config set --secret apiKey sk-1234567890abcdef
+      pulumi config set --secret sshPrivateKey "$(cat ~/.ssh/id_rsa)"
+      
+      Then run:
+      pulumi up
+      
+      Test with LocalStack:
+      gmake localstack-start
+      aws ssm describe-parameters --endpoint-url http://localhost:4566

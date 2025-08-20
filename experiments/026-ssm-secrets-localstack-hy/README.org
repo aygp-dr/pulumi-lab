@@ -1,0 +1,151 @@
+#+TITLE: SSM Parameter Store with LocalStack Testing
+#+AUTHOR: Pulumi Lab
+#+STARTUP: overview
+
+* Overview
+
+This experiment demonstrates:
+- SSM Parameter Store usage with Pulumi
+- Secrets management with KMS encryption
+- LocalStack testing environment
+- Hierarchical parameter organization
+
+* Quick Start
+
+** Set Configuration Secrets
+
+#+begin_src bash :results output
+# Set secrets using Pulumi config
+pulumi config set --secret dbPassword S3cr37
+pulumi config set --secret apiKey sk-1234567890abcdef
+pulumi config set app-name myworkshop
+#+end_src
+
+** Deploy to LocalStack
+
+#+begin_src bash :results output
+# Start LocalStack
+gmake localstack-start
+
+# Deploy parameters
+pulumi up
+#+end_src
+
+* Testing with LocalStack
+
+** Environment Setup
+
+#+begin_src bash :results output
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ENDPOINT_URL=http://localhost:4566
+#+end_src
+
+** List Parameters
+
+#+begin_src bash :results output
+aws ssm describe-parameters --endpoint-url $AWS_ENDPOINT_URL
+#+end_src
+
+** Get Specific Parameter
+
+#+begin_src bash :results output
+aws ssm get-parameter \
+  --name "/workshop/dev/version" \
+  --endpoint-url $AWS_ENDPOINT_URL
+#+end_src
+
+** Get Encrypted Parameter
+
+#+begin_src bash :results output
+aws ssm get-parameter \
+  --name "/workshop/dev/database/password" \
+  --with-decryption \
+  --endpoint-url $AWS_ENDPOINT_URL
+#+end_src
+
+** Get Parameters by Path
+
+#+begin_src bash :results output
+aws ssm get-parameters-by-path \
+  --path "/workshop/dev/" \
+  --recursive \
+  --with-decryption \
+  --endpoint-url $AWS_ENDPOINT_URL
+#+end_src
+
+* Parameter Hierarchy
+
+The experiment creates a logical parameter hierarchy:
+
+#+begin_example
+/workshop/dev/
+├── version                    # Application version
+├── config                     # JSON configuration
+├── allowed-hosts             # StringList of hosts
+├── features                  # Feature flags JSON
+├── scaling                   # Auto-scaling config
+├── database/
+│   ├── host                  # Database hostname
+│   ├── port                  # Database port
+│   ├── name                  # Database name
+│   ├── ssl                   # SSL mode
+│   └── password             # Encrypted password
+├── api/
+│   └── key                   # Encrypted API key
+└── generated/
+    └── password             # Auto-generated password
+#+end_example
+
+* Lambda Function Testing
+
+The deployed Lambda function demonstrates parameter access:
+
+#+begin_src bash :results output
+aws lambda invoke \
+  --function-name "$(pulumi stack output lambda-function)" \
+  --endpoint-url $AWS_ENDPOINT_URL \
+  response.json
+
+cat response.json
+#+end_src
+
+* Configuration Patterns
+
+** Secret Management
+
+#+begin_src bash :results output
+# Set secrets via Pulumi config
+pulumi config set --secret dbPassword MySecretPassword123!
+pulumi config set --secret sshPrivateKey "$(cat ~/.ssh/id_rsa)"
+
+# View configuration (secrets are hidden)
+pulumi config
+
+# Get decrypted value
+pulumi config get dbPassword
+#+end_src
+
+** Parameter Organization
+
+Parameters are organized hierarchically:
+- Environment separation (dev/staging/prod)
+- Logical grouping (database, api, features)
+- Type-specific handling (String, SecureString, StringList)
+
+** KMS Encryption
+
+All SecureString parameters use KMS encryption:
+- Dedicated KMS key per application
+- Automatic encryption/decryption
+- Access control via IAM policies
+
+* Best Practices Demonstrated
+
+- Hierarchical parameter organization
+- Environment-specific configurations
+- Secure secret storage with KMS
+- Lambda function parameter access
+- LocalStack testing workflow
+- Configuration validation patterns
