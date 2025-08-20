@@ -13,8 +13,6 @@
 
 * Overview
 
-⚠️ *EXPERIMENTAL PROJECT* ⚠️
-
 This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD. The project demonstrates advanced IaC patterns, policy as code, and automation API capabilities.
 
 *Current Environment:*
@@ -26,13 +24,31 @@ This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Li
 
 ** Quick Start
 
-#+begin_src bash :dir . :results verbatim
-# Install Pulumi
-curl -fsSL https://get.pulumi.com | sh
+Check if Pulumi is installed:
 
+#+begin_src bash :dir . :results verbatim
+which pulumi && pulumi version || echo "Pulumi not installed"
+#+end_src
+
+Install Pulumi if needed:
+
+#+begin_src bash :dir . :results verbatim
+# Install Pulumi (only if not installed)
+if ! command -v pulumi &> /dev/null; then
+    curl -fsSL https://get.pulumi.com | sh
+fi
+#+end_src
+
+Set up the environment:
+
+#+begin_src bash :dir . :results verbatim
 # Set up environment
 gmake install setup-hy
+#+end_src
 
+Run your first experiment:
+
+#+begin_src bash :dir . :results verbatim
 # Run first experiment
 cd experiments/001-github-provider
 pulumi up
