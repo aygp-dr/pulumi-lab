@@ -64,14 +64,14 @@ clean:
 	find . -type f -name "Pulumi.*.yaml" -delete
 
 # Documentation publishing
-publish-readme: ## Publish README.org files to README.md using Emacs
-	@echo "📚 Publishing README.org files to README.md"
-	@./scripts/publish-readme.sh
+README.md: README.org
+	emacs -Q --batch -l org $< -f org-md-export-to-markdown
 
-publish-readme-python: ## Publish README.org files using Python script
-	@echo "📚 Publishing README.org files via Python"
-	@uv run scripts/publish-readme.py
+%/README.md: %/README.org
+	cd $* && emacs -Q --batch -l org README.org -f org-md-export-to-markdown
 
-watch-readme: ## Watch README.org files and auto-publish on changes
-	@echo "👁️  Watching README.org files for changes..."
-	@fswatch -r --event=Updated . -i ".*README\.org$$" | xargs -I {} ./scripts/publish-readme.sh {}
+.venv: pyproject.toml
+	uv sync
+	touch .venv
+
+setup: .venv
