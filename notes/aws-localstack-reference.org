@@ -1,0 +1,339 @@
+#+TITLE: AWS with LocalStack - Cloud-Free Reference
+#+AUTHOR: Pulumi Lab
+#+DATE: 2025-08-20
+#+STARTUP: overview
+
+* Overview
+
+Notes on AWS cloud services with LocalStack integration for local development.
+Based on https://www.pulumi.com/docs/iac/clouds/aws/ but targeting LocalStack only.
+
+* LocalStack Integration
+
+** What is LocalStack?
+- Local cloud stack emulating AWS services
+- Perfect for development and testing
+- No cloud costs or credentials needed
+- Supports most common AWS services
+
+** Supported Services in LocalStack
+- ✅ S3 (Simple Storage Service)
+- ✅ DynamoDB (NoSQL Database)
+- ✅ Lambda (Serverless Functions)
+- ✅ API Gateway (REST/HTTP APIs)
+- ✅ CloudFormation (Infrastructure as Code)
+- ✅ EC2 (partial support)
+- ✅ IAM (Identity and Access Management)
+- ✅ SQS (Simple Queue Service)
+- ✅ SNS (Simple Notification Service)
+- ✅ CloudWatch (Logs and Metrics)
+- ✅ SSM (Systems Manager Parameter Store)
+- ✅ KMS (Key Management Service)
+- ⚠️ CloudFront (limited support)
+- ⚠️ Route53 (basic support)
+
+* Static Website Template (LocalStack)
+
+** Template Structure
+Based on https://www.pulumi.com/templates/static-website/aws/ but for LocalStack:
+
+#+begin_src bash
+pulumi new static-website-aws --force
+# Then modify for LocalStack endpoints
+#+end_src
+
+** Key Components
+1. **S3 Bucket** - Static file hosting
+2. **Bucket Policy** - Public read access
+3. **Website Configuration** - Index/error documents
+4. **CloudFront** (optional) - CDN distribution
+
+** LocalStack Configuration
+#+begin_src python
+localstack_provider = aws.Provider("localstack",
+    region="us-east-1",
+    access_key="test",
+    secret_key="test",
+    skip_credentials_validation=True,
+    skip_metadata_api_check=True,
+    skip_requesting_account_id=True,
+    endpoints=aws.ProviderEndpointsArgs(
+        s3="http://localhost:4566",
+        cloudfront="http://localhost:4566",
+        route53="http://localhost:4566",
+        dynamodb="http://localhost:4566",
+        lambda_="http://localhost:4566",
+        apigateway="http://localhost:4566"
+    )
+)
+#+end_src
+
+* Common Patterns for LocalStack
+
+** S3 Static Website
+#+begin_src python
+# Create bucket
+bucket = aws.s3.BucketV2('website-bucket',
+    opts=pulumi.ResourceOptions(provider=localstack_provider)
+)
+
+# Configure for static website
+website_config = aws.s3.BucketWebsiteConfigurationV2('website-config',
+    bucket=bucket.id,
+    index_document=aws.s3.BucketWebsiteConfigurationV2IndexDocumentArgs(
+        suffix="index.html"
+    ),
+    error_document=aws.s3.BucketWebsiteConfigurationV2ErrorDocumentArgs(
+        key="404.html"
+    ),
+    opts=pulumi.ResourceOptions(provider=localstack_provider)
+)
+
+# Upload files
+for file in os.listdir("www"):
+    filepath = os.path.join("www", file)
+    mime_type, _ = mimetypes.guess_type(filepath)
+    obj = aws.s3.BucketObject(file,
+        bucket=bucket.id,
+        source=pulumi.FileAsset(filepath),
+        content_type=mime_type,
+        opts=pulumi.ResourceOptions(provider=localstack_provider)
+    )
+#+end_src
+
+** DynamoDB Table
+#+begin_src python
+table = aws.dynamodb.Table("app-table",
+    name="workshop-table",
+    billing_mode="PAY_PER_REQUEST",
+    hash_key="id",
+    attributes=[
+        aws.dynamodb.TableAttributeArgs(name="id", type="S"),
+        aws.dynamodb.TableAttributeArgs(name="timestamp", type="N")
+    ],
+    global_secondary_indexes=[
+        aws.dynamodb.TableGlobalSecondaryIndexArgs(
+            name="timestamp-index",
+            hash_key="timestamp",
+            projection_type="ALL"
+        )
+    ],
+    opts=pulumi.ResourceOptions(provider=localstack_provider)
+)
+#+end_src
+
+** Lambda Function
+#+begin_src python
+# Lambda function code
+lambda_code = """
+def handler(event, context):
+    import json
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': 'Hello from LocalStack!'})
+    }
+"""
+
+# Create function
+function = aws.lambda_.Function("app-function",
+    code=pulumi.AssetArchive({
+        "index.py": pulumi.StringAsset(lambda_code)
+    }),
+    role=lambda_role.arn,
+    handler="index.handler",
+    runtime="python3.9",
+    opts=pulumi.ResourceOptions(provider=localstack_provider)
+)
+#+end_src
+
+* Testing Commands
+
+** Environment Setup
+#+begin_src bash
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ENDPOINT_URL=http://localhost:4566
+#+end_src
+
+** S3 Operations
+#+begin_src bash
+# List buckets
+aws s3 ls --endpoint-url=$AWS_ENDPOINT_URL
+
+# List objects in bucket
+aws s3 ls s3://bucket-name --endpoint-url=$AWS_ENDPOINT_URL
+
+# Get object
+aws s3 cp s3://bucket-name/file.html . --endpoint-url=$AWS_ENDPOINT_URL
+
+# Sync directory
+aws s3 sync ./www s3://bucket-name --endpoint-url=$AWS_ENDPOINT_URL
+#+end_src
+
+** DynamoDB Operations
+#+begin_src bash
+# List tables
+aws dynamodb list-tables --endpoint-url=$AWS_ENDPOINT_URL
+
+# Describe table
+aws dynamodb describe-table --table-name workshop-table --endpoint-url=$AWS_ENDPOINT_URL
+
+# Put item
+aws dynamodb put-item \
+  --table-name workshop-table \
+  --item '{"id": {"S": "test-1"}, "data": {"S": "hello world"}}' \
+  --endpoint-url=$AWS_ENDPOINT_URL
+
+# Scan table
+aws dynamodb scan --table-name workshop-table --endpoint-url=$AWS_ENDPOINT_URL
+#+end_src
+
+** Lambda Operations
+#+begin_src bash
+# List functions
+aws lambda list-functions --endpoint-url=$AWS_ENDPOINT_URL
+
+# Invoke function
+aws lambda invoke \
+  --function-name app-function \
+  --endpoint-url=$AWS_ENDPOINT_URL \
+  response.json
+
+cat response.json
+#+end_src
+
+* Limitations and Workarounds
+
+** CloudFront Limitations
+- Limited CloudFront support in LocalStack
+- Use S3 website endpoints directly for testing
+- Mock CloudFront behavior with local proxy
+
+** IAM Limitations
+- LocalStack IAM is permissive by default
+- Use for testing policy syntax, not enforcement
+- Real IAM testing requires AWS
+
+** Networking Limitations
+- VPC and EC2 support is basic
+- Use for infrastructure templating only
+- Real networking tests need AWS
+
+* Development Workflow
+
+** 1. Local Development
+#+begin_src bash
+# Start LocalStack
+gmake localstack-start
+
+# Deploy to LocalStack
+pulumi up
+
+# Test endpoints
+curl http://localhost:4566/bucket-name/index.html
+#+end_src
+
+** 2. Static Website Testing
+#+begin_src bash
+# Deploy static site
+pulumi up
+
+# Get website endpoint
+BUCKET_NAME=$(pulumi stack output bucket_name)
+echo "Website: http://localhost:4566/$BUCKET_NAME/index.html"
+
+# Test with curl
+curl "http://localhost:4566/$BUCKET_NAME/index.html"
+#+end_src
+
+** 3. API Testing
+#+begin_src bash
+# Deploy API Gateway + Lambda
+pulumi up
+
+# Get API endpoint
+API_ID=$(pulumi stack output api_id)
+echo "API: http://localhost:4566/restapis/$API_ID/dev/_user_request_/"
+
+# Test API
+curl "http://localhost:4566/restapis/$API_ID/dev/_user_request_/"
+#+end_src
+
+* Future Cloud Migration
+
+** When to Move to AWS
+- [ ] Production deployment needed
+- [ ] Real IAM policies required
+- [ ] CloudFront CDN needed
+- [ ] Advanced networking required
+- [ ] Compliance requirements
+- [ ] Global distribution needed
+
+** Migration Checklist
+- [ ] Update provider configuration
+- [ ] Set up AWS credentials
+- [ ] Review IAM policies
+- [ ] Configure DNS
+- [ ] Set up monitoring
+- [ ] Plan backup strategy
+
+** Provider Configuration for AWS
+#+begin_src python
+# For real AWS deployment
+aws_provider = aws.Provider("aws",
+    region="us-west-2",
+    # Will use default credential chain
+)
+
+# Update resource options
+opts=pulumi.ResourceOptions(provider=aws_provider)
+#+end_src
+
+* Cost Considerations
+
+** LocalStack Benefits
+- ✅ No AWS charges
+- ✅ Unlimited testing
+- ✅ Fast iteration
+- ✅ Offline development
+
+** AWS Real Costs
+- S3: ~$0.023/GB/month
+- Lambda: ~$0.20/1M requests
+- CloudFront: ~$0.085/GB transfer
+- API Gateway: ~$3.50/1M requests
+
+* Integration Examples
+
+** Complete Static Website
+See: experiments/029-python-blocking-async-hy/
+- S3 bucket hosting
+- Multiple file uploads
+- Website configuration
+- Public access policies
+
+** Serverless API
+See: experiments/010-lambda-api-hy/
+- Lambda functions
+- API Gateway
+- DynamoDB integration
+- CloudWatch logs
+
+** Multi-service Application
+See: experiments/017-providers-localstack-hy/
+- Multiple AWS services
+- Service integration
+- Testing workflows
+- Development patterns
+
+* Resources
+
+- [[https://docs.localstack.cloud/][LocalStack Documentation]]
+- [[https://www.pulumi.com/docs/iac/clouds/aws/][Pulumi AWS Documentation]]
+- [[https://www.pulumi.com/templates/static-website/aws/][Static Website Template]]
+- [[https://github.com/localstack/localstack][LocalStack GitHub]]
+
+---
+
+*Note: This reference focuses on LocalStack development patterns. For production AWS deployment, refer to official Pulumi AWS documentation.*

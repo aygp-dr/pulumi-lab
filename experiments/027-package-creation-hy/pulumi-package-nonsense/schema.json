@@ -1,0 +1,440 @@
+{
+  "name": "nonsense",
+  "displayName": "Nonsense Provider",
+  "description": "A completely nonsensical Pulumi provider for demonstration purposes",
+  "keywords": [
+    "pulumi",
+    "nonsense",
+    "example",
+    "category/utility"
+  ],
+  "homepage": "https://github.com/aygp-dr/pulumi-lab",
+  "license": "MIT",
+  "attribution": "This package is created for educational purposes in the Pulumi Lab",
+  "repository": "https://github.com/aygp-dr/pulumi-lab",
+  "pluginDownloadURL": "https://github.com/aygp-dr/pulumi-lab/releases/download/v${version}/pulumi-resource-nonsense-v${version}-${os}-${arch}.tar.gz",
+  "publisher": "aygp-dr",
+  "meta": {
+    "moduleFormat": "(.*)(?:/[^/]*)"
+  },
+  "language": {
+    "csharp": {
+      "packageReferences": {
+        "Pulumi": "3.*"
+      },
+      "namespaces": {
+        "nonsense": "Nonsense"
+      }
+    },
+    "go": {
+      "importBasePath": "github.com/aygp-dr/pulumi-nonsense/sdk/go/nonsense"
+    },
+    "nodejs": {
+      "packageName": "@aygp-dr/nonsense",
+      "dependencies": {
+        "@pulumi/pulumi": "^3.0.0"
+      },
+      "devDependencies": {
+        "@types/node": "^16"
+      }
+    },
+    "python": {
+      "packageName": "pulumi-nonsense",
+      "requires": {
+        "pulumi": ">=3.0.0,<4.0.0"
+      }
+    }
+  },
+  "config": {
+    "variables": {
+      "nonsenseLevel": {
+        "type": "string",
+        "description": "Level of nonsense to apply (low, medium, high, maximum)",
+        "default": "medium"
+      },
+      "enableChaos": {
+        "type": "boolean",
+        "description": "Enable chaotic behavior in resource management",
+        "default": false
+      },
+      "quantumState": {
+        "type": "string",
+        "description": "Quantum superposition state for Schrödinger resources",
+        "default": "superposition"
+      }
+    }
+  },
+  "provider": {
+    "description": "The provider type for the nonsense package.",
+    "properties": {
+      "nonsenseLevel": {
+        "$ref": "#/config/variables/nonsenseLevel"
+      },
+      "enableChaos": {
+        "$ref": "#/config/variables/enableChaos"
+      },
+      "quantumState": {
+        "$ref": "#/config/variables/quantumState"
+      }
+    },
+    "inputProperties": {
+      "nonsenseLevel": {
+        "$ref": "#/config/variables/nonsenseLevel"
+      },
+      "enableChaos": {
+        "$ref": "#/config/variables/enableChaos"
+      },
+      "quantumState": {
+        "$ref": "#/config/variables/quantumState"
+      }
+    }
+  },
+  "types": {
+    "nonsense:index:MagicalProperties": {
+      "description": "Magical properties for nonsense resources",
+      "type": "object",
+      "properties": {
+        "spellPower": {
+          "type": "integer",
+          "description": "Magical spell power level (1-100)"
+        },
+        "enchantmentType": {
+          "type": "string",
+          "description": "Type of enchantment applied",
+          "enum": ["fire", "ice", "lightning", "confusion", "time-warp"]
+        },
+        "runicInscriptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of runic inscriptions"
+        }
+      },
+      "required": ["spellPower", "enchantmentType"]
+    },
+    "nonsense:index:QuantumProperties": {
+      "description": "Quantum mechanical properties",
+      "type": "object",
+      "properties": {
+        "waveFunction": {
+          "type": "string",
+          "description": "Quantum wave function equation"
+        },
+        "observerEffect": {
+          "type": "boolean",
+          "description": "Whether the observer effect is active"
+        },
+        "entangledWith": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of entangled resource URNs"
+        },
+        "probabilityCloud": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Probability distribution map"
+        }
+      }
+    }
+  },
+  "resources": {
+    "nonsense:index:MagicalUnicorn": {
+      "description": "A magical unicorn resource that brings joy and rainbow bridges",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The unicorn's mystical name"
+        },
+        "hornLength": {
+          "type": "number",
+          "description": "Length of the unicorn's horn in magical units"
+        },
+        "rainbowIntensity": {
+          "type": "integer",
+          "description": "Intensity of rainbow generation (1-100)",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "magicalProperties": {
+          "$ref": "#/types/nonsense:index:MagicalProperties",
+          "description": "Magical properties of the unicorn"
+        },
+        "location": {
+          "type": "string",
+          "description": "Current location of the unicorn"
+        },
+        "isVisible": {
+          "type": "boolean",
+          "description": "Whether the unicorn is currently visible to mortals"
+        }
+      },
+      "required": ["name", "hornLength"],
+      "inputProperties": {
+        "name": {
+          "type": "string",
+          "description": "The unicorn's mystical name"
+        },
+        "hornLength": {
+          "type": "number",
+          "description": "Length of the unicorn's horn in magical units"
+        },
+        "rainbowIntensity": {
+          "type": "integer",
+          "description": "Intensity of rainbow generation (1-100)",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        },
+        "magicalProperties": {
+          "$ref": "#/types/nonsense:index:MagicalProperties",
+          "description": "Magical properties of the unicorn"
+        }
+      }
+    },
+    "nonsense:index:SchrodingersResource": {
+      "description": "A quantum resource that exists in superposition until observed",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The resource's quantum name"
+        },
+        "state": {
+          "type": "string",
+          "description": "Current quantum state",
+          "enum": ["alive", "dead", "superposition", "observed", "decoherent"]
+        },
+        "quantumProperties": {
+          "$ref": "#/types/nonsense:index:QuantumProperties",
+          "description": "Quantum mechanical properties"
+        },
+        "boxId": {
+          "type": "string",
+          "description": "ID of the containing quantum box"
+        },
+        "lastObserved": {
+          "type": "string",
+          "description": "Timestamp of last observation"
+        },
+        "halfLife": {
+          "type": "number",
+          "description": "Half-life in quantum time units"
+        }
+      },
+      "required": ["name", "boxId"],
+      "inputProperties": {
+        "name": {
+          "type": "string",
+          "description": "The resource's quantum name"
+        },
+        "initialState": {
+          "type": "string",
+          "description": "Initial quantum state",
+          "enum": ["superposition", "definite"],
+          "default": "superposition"
+        },
+        "quantumProperties": {
+          "$ref": "#/types/nonsense:index:QuantumProperties",
+          "description": "Quantum mechanical properties"
+        },
+        "halfLife": {
+          "type": "number",
+          "description": "Half-life in quantum time units",
+          "default": 42.0
+        }
+      }
+    },
+    "nonsense:index:InfiniteMonkey": {
+      "description": "An infinite monkey that types random text and occasionally produces Shakespeare",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The monkey's literary pseudonym"
+        },
+        "typewriterModel": {
+          "type": "string",
+          "description": "Model of typewriter being used"
+        },
+        "wordsPerMinute": {
+          "type": "integer",
+          "description": "Typing speed in words per minute"
+        },
+        "totalCharactersTyped": {
+          "type": "integer",
+          "description": "Total characters typed since inception"
+        },
+        "shakespeareCount": {
+          "type": "integer",
+          "description": "Number of Shakespeare works completed"
+        },
+        "currentWork": {
+          "type": "string",
+          "description": "Current text being typed"
+        },
+        "isInspired": {
+          "type": "boolean",
+          "description": "Whether the monkey is currently inspired"
+        }
+      },
+      "required": ["name", "typewriterModel"],
+      "inputProperties": {
+        "name": {
+          "type": "string",
+          "description": "The monkey's literary pseudonym"
+        },
+        "typewriterModel": {
+          "type": "string",
+          "description": "Model of typewriter being used",
+          "enum": ["Remington", "Underwood", "Smith-Corona", "Royal", "Quantum-Typewriter"]
+        },
+        "initialSpeed": {
+          "type": "integer",
+          "description": "Initial typing speed in words per minute",
+          "default": 40,
+          "minimum": 1,
+          "maximum": 1000
+        }
+      }
+    },
+    "nonsense:index:TimeParadox": {
+      "description": "A temporal anomaly that creates causality loops",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the time paradox"
+        },
+        "paradoxType": {
+          "type": "string",
+          "description": "Type of temporal paradox",
+          "enum": ["grandfather", "bootstrap", "predestination", "causal-loop", "temporal-displacement"]
+        },
+        "timelineId": {
+          "type": "string",
+          "description": "ID of the affected timeline"
+        },
+        "originalTimestamp": {
+          "type": "string",
+          "description": "Original timeline timestamp"
+        },
+        "alteredTimestamp": {
+          "type": "string",
+          "description": "Altered timeline timestamp"
+        },
+        "causalityIntegrity": {
+          "type": "number",
+          "description": "Integrity of causality (0.0-1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "resolutionMethod": {
+          "type": "string",
+          "description": "Method to resolve the paradox"
+        }
+      },
+      "required": ["name", "paradoxType", "timelineId"],
+      "inputProperties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the time paradox"
+        },
+        "paradoxType": {
+          "type": "string",
+          "description": "Type of temporal paradox",
+          "enum": ["grandfather", "bootstrap", "predestination", "causal-loop", "temporal-displacement"]
+        },
+        "targetTimestamp": {
+          "type": "string",
+          "description": "Target timestamp for the paradox"
+        }
+      }
+    }
+  },
+  "functions": {
+    "nonsense:index:generateNonsense": {
+      "description": "Generate completely nonsensical text",
+      "inputs": {
+        "properties": {
+          "length": {
+            "type": "integer",
+            "description": "Length of nonsense to generate",
+            "default": 100
+          },
+          "style": {
+            "type": "string",
+            "description": "Style of nonsense",
+            "enum": ["jabberwocky", "lorem-ipsum", "technical-babble", "quantum-physics", "magical-incantation"],
+            "default": "jabberwocky"
+          },
+          "includeEmojis": {
+            "type": "boolean",
+            "description": "Whether to include emojis in the nonsense",
+            "default": false
+          }
+        }
+      },
+      "outputs": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The generated nonsensical text"
+          },
+          "wordCount": {
+            "type": "integer",
+            "description": "Number of words generated"
+          },
+          "nonsenseRating": {
+            "type": "number",
+            "description": "Scientific nonsense rating (0.0-10.0)"
+          }
+        },
+        "required": ["text", "wordCount", "nonsenseRating"]
+      }
+    },
+    "nonsense:index:calculateQuantumProbability": {
+      "description": "Calculate quantum probability for resource states",
+      "inputs": {
+        "properties": {
+          "waveFunction": {
+            "type": "string",
+            "description": "Quantum wave function equation"
+          },
+          "observerPresent": {
+            "type": "boolean",
+            "description": "Whether an observer is present",
+            "default": false
+          },
+          "measurementType": {
+            "type": "string",
+            "description": "Type of quantum measurement",
+            "enum": ["position", "momentum", "spin", "entanglement", "superposition"]
+          }
+        },
+        "required": ["waveFunction", "measurementType"]
+      },
+      "outputs": {
+        "properties": {
+          "probability": {
+            "type": "number",
+            "description": "Calculated probability (0.0-1.0)"
+          },
+          "collapsed": {
+            "type": "boolean",
+            "description": "Whether the wave function collapsed"
+          },
+          "uncertaintyPrinciple": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Heisenberg uncertainty values"
+          }
+        },
+        "required": ["probability", "collapsed"]
+      }
+    }
+  }
+}

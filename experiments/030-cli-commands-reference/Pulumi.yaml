@@ -1,0 +1,22 @@
+name: cli-commands-reference
+runtime: python
+description: Comprehensive Pulumi CLI commands reference and examples with Hy
+
+config:
+  app-name:
+    type: string
+    description: Application name for CLI demonstrations
+    default: "cli-demo"
+
+template:
+  description: CLI commands reference template
+  important: |
+    This experiment creates simple resources to demonstrate CLI commands.
+    Use the exported examples to learn Pulumi CLI workflows.
+    
+    Key commands to try:
+    - pulumi preview --diff
+    - pulumi up --target <resource-urn>
+    - pulumi stack export
+    - pulumi config
+    - pulumi logs
