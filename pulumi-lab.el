@@ -152,6 +152,17 @@
   ;; Don't ask for confirmation when executing code blocks
   (setq org-confirm-babel-evaluate nil)
   
+  ;; Trust local variables without prompting
+  (setq enable-local-variables :all)
+  (setq enable-local-eval t)
+  
+  ;; Mark common org-babel variables as safe
+  (put 'org-babel-python-command 'safe-local-variable #'stringp)
+  (put 'org-confirm-babel-evaluate 'safe-local-variable #'booleanp)
+  (put 'org-src-fontify-natively 'safe-local-variable #'booleanp)
+  (put 'org-src-tab-acts-natively 'safe-local-variable #'booleanp)
+  (put 'org-edit-src-content-indentation 'safe-local-variable #'integerp)
+  
   ;; Set default headers
   (setq org-babel-default-header-args:python
         '((:session . "pulumi-lab")
