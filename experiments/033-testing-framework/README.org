@@ -1,0 +1,270 @@
+#+TITLE: Testing Approaches for Pulumi Lab
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Testing Org-Mode and Emacs Configuration
+
+This document outlines various approaches for testing the pulumi-lab.el package and org-mode integration.
+
+* Testing Approaches
+
+** 1. Batch Mode Testing (Non-Interactive)
+
+Test org-babel blocks in batch mode without UI:
+
+#+begin_src bash
+# Basic batch test - load package and execute blocks
+export PATH="$HOME/.pulumi/bin:$PATH"
+emacs -nw -Q --batch -l pulumi-lab.el \
+  --eval '(progn 
+    (find-file "README.org")
+    (goto-char (point-min))
+    (re-search-forward "^#\\+begin_src bash")
+    (org-babel-execute-src-block)
+    (message "Test completed"))'
+#+end_src
+
+#+begin_src bash
+# Test all bash blocks in a file
+export PATH="$HOME/.pulumi/bin:$PATH"
+emacs -nw -Q --batch -l pulumi-lab.el \
+  --eval '(progn 
+    (find-file "README.org")
+    (goto-char (point-min))
+    (let ((count 0))
+      (while (re-search-forward "^#\\+begin_src bash" nil t)
+        (setq count (1+ count))
+        (condition-case err
+            (progn 
+              (org-babel-execute-src-block)
+              (message "Block %d executed" count))
+          (error (message "Block %d failed: %s" count err))))
+      (message "Tested %d blocks" count)))'
+#+end_src
+
+** 2. Interactive tmux Testing
+
+Test with tmux for interactive debugging:
+
+#+begin_src bash
+# Start tmux session with Emacs
+tmux new-session -d -s test-emacs "emacs -nw README.org"
+
+# Send keystrokes
+tmux send-keys -t test-emacs "C-c C-c"  # Execute block
+tmux send-keys -t test-emacs "C-n"       # Next line
+tmux send-keys -t test-emacs "TAB"       # Expand section
+
+# Capture pane output
+tmux capture-pane -t test-emacs -p > output.txt
+
+# View specific lines
+tmux capture-pane -t test-emacs -p | head -30
+
+# Clean up
+tmux kill-session -t test-emacs
+#+end_src
+
+** 3. Unit Testing with ERT (Emacs Lisp Regression Testing)
+
+Create unit tests for the package functions:
+
+#+begin_src emacs-lisp :tangle test-pulumi-lab.el
+;;; test-pulumi-lab.el --- Tests for pulumi-lab.el -*- lexical-binding: t; -*-
+
+(require 'ert)
+(require 'pulumi-lab)
+
+(ert-deftest test-pulumi-lab-project-root ()
+  "Test finding project root."
+  (let ((default-directory "/tmp/test-project/"))
+    (make-directory default-directory t)
+    (with-temp-file (expand-file-name "pulumi-lab.el" default-directory))
+    (should (equal (pulumi-lab-project-root) 
+                   (file-name-as-directory default-directory)))
+    (delete-directory default-directory t)))
+
+(ert-deftest test-pulumi-lab-venv-path ()
+  "Test virtual environment path construction."
+  (let ((pulumi-lab-venv-name ".venv")
+        (default-directory "/tmp/test-project/"))
+    (make-directory default-directory t)
+    (with-temp-file (expand-file-name "Pulumi.yaml" default-directory))
+    (should (string-match-p ".venv$" (pulumi-lab-venv-path)))
+    (delete-directory default-directory t)))
+
+(ert-deftest test-pulumi-lab-configure-babel ()
+  "Test org-babel configuration."
+  (pulumi-lab-configure-babel)
+  (should (assoc 'python org-babel-load-languages))
+  (should (assoc 'shell org-babel-load-languages))
+  (should (null org-confirm-babel-evaluate)))
+
+(ert-deftest test-pulumi-lab-list-experiments ()
+  "Test listing experiments."
+  (let ((default-directory "/tmp/test-project/")
+        (pulumi-lab-experiments-dir "experiments"))
+    (make-directory (expand-file-name "experiments/001-test" default-directory) t)
+    (make-directory (expand-file-name "experiments/002-test" default-directory) t)
+    (let ((experiments (pulumi-lab-list-experiments)))
+      (should (member "001-test" experiments))
+      (should (member "002-test" experiments)))
+    (delete-directory default-directory t)))
+
+;; Run tests
+(ert-run-tests-batch-and-exit)
+#+end_src
+
+Run the tests:
+#+begin_src bash
+emacs -Q --batch -l pulumi-lab.el -l test-pulumi-lab.el
+#+end_src
+
+** 4. Automated CI Testing
+
+GitHub Actions workflow example:
+
+#+begin_src yaml :tangle .github/workflows/test.yml
+name: Test Pulumi Lab
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Emacs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y emacs
+      
+      - name: Install Pulumi
+        run: curl -fsSL https://get.pulumi.com | sh
+      
+      - name: Run batch tests
+        run: |
+          export PATH="$HOME/.pulumi/bin:$PATH"
+          emacs -Q --batch -l pulumi-lab.el \
+            --eval '(progn
+              (find-file "README.org")
+              (org-babel-execute-buffer)
+              (message "All blocks executed"))'
+      
+      - name: Run unit tests
+        run: |
+          emacs -Q --batch -l pulumi-lab.el -l test-pulumi-lab.el
+#+end_src
+
+** 5. Shell Script Test Runner
+
+Create a comprehensive test script:
+
+#+begin_src bash :tangle test-runner.sh
+#!/usr/bin/env bash
+
+set -e
+
+echo "=== Pulumi Lab Test Runner ==="
+
+# Setup
+export PATH="$HOME/.pulumi/bin:$PATH"
+FAILED=0
+
+# Function to run a test
+run_test() {
+    local name="$1"
+    local cmd="$2"
+    
+    echo -n "Testing $name... "
+    if eval "$cmd" > /dev/null 2>&1; then
+        echo "✓"
+    else
+        echo "✗"
+        FAILED=$((FAILED + 1))
+    fi
+}
+
+# Test 1: Package loads without errors
+run_test "package loading" \
+    "emacs -Q --batch -l pulumi-lab.el --eval '(message \"loaded\")'"
+
+# Test 2: Org-babel configuration
+run_test "org-babel setup" \
+    "emacs -Q --batch -l pulumi-lab.el --eval '(pulumi-lab-configure-babel)'"
+
+# Test 3: Python execution
+run_test "python blocks" \
+    "emacs -Q --batch -l pulumi-lab.el --eval '(progn
+        (org-babel-do-load-languages (quote org-babel-load-languages) 
+                                     (quote ((python . t))))
+        (org-babel-execute:python \"print(1+1)\" nil))'"
+
+# Test 4: Shell execution
+run_test "shell blocks" \
+    "emacs -Q --batch -l pulumi-lab.el --eval '(progn
+        (org-babel-do-load-languages (quote org-babel-load-languages) 
+                                     (quote ((shell . t))))
+        (org-babel-execute:shell \"echo test\" nil))'"
+
+# Test 5: Project root detection
+run_test "project root" \
+    "emacs -Q --batch -l pulumi-lab.el --eval '(pulumi-lab-project-root)'"
+
+# Summary
+echo "========================"
+if [ $FAILED -eq 0 ]; then
+    echo "All tests passed! ✓"
+    exit 0
+else
+    echo "$FAILED tests failed ✗"
+    exit 1
+fi
+#+end_src
+
+Make it executable:
+#+begin_src bash
+chmod +x test-runner.sh
+./test-runner.sh
+#+end_src
+
+* Testing Best Practices
+
+1. **Isolation**: Use `-Q` flag to start Emacs without user config
+2. **PATH Management**: Always export Pulumi path when testing
+3. **Cleanup**: Kill tmux sessions and temp files after tests
+4. **Error Handling**: Use condition-case for graceful failures
+5. **Batch Mode**: Prefer batch mode for CI/automated testing
+6. **Interactive Debug**: Use tmux approach for debugging issues
+
+* Common Issues and Solutions
+
+| Issue | Solution |
+|-------+----------|
+| ob-hy not found | Make hy-mode optional with (featurep 'hy-mode) |
+| Local variables prompt | Set enable-local-variables to :all |
+| Pulumi not in PATH | Export PATH before running tests |
+| File lock conflicts | Use separate test files or kill existing sessions |
+| Missing dependencies | Use pulumi-lab-ensure-packages function |
+
+* Quick Test Commands
+
+Test if everything works:
+#+begin_src bash
+# Quick smoke test
+export PATH="$HOME/.pulumi/bin:$PATH"
+emacs -Q --batch -l pulumi-lab.el --eval '(message "Package loaded successfully")'
+#+end_src
+
+Test specific functionality:
+#+begin_src bash
+# Test Pulumi detection
+emacs -Q --batch -l pulumi-lab.el \
+  --eval '(message "Pulumi found: %s" (executable-find "pulumi"))'
+
+# Test Python integration  
+emacs -Q --batch -l pulumi-lab.el \
+  --eval '(message "Python: %s" python-shell-interpreter)'
+#+end_src
