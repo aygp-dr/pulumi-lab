@@ -27,6 +27,16 @@ env/
 *.swo
 *~
 
+# Emacs
+\#*\#
+.\#*
+*.elc
+.dir-locals.el
+auto-save-list/
+tramp
+*_archive
+.org-id-locations
+
 # OS
 .DS_Store
 Thumbs.db
