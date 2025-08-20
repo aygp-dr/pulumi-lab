@@ -1,0 +1,444 @@
+#+TITLE: Hy Tutorial for Pulumi Lab
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+#+STARTUP: overview
+#+PROPERTY: header-args:hy :results output :exports both
+
+* Introduction to Hy
+
+Hy is a Lisp dialect that compiles to Python AST, giving you:
+- The elegance and power of Lisp
+- Full access to Python's ecosystem
+- Perfect interoperability with Python code
+
+This tutorial focuses on using Hy for Pulumi Infrastructure as Code.
+
+* Quick Start
+
+** Installation
+
+#+begin_src bash
+# Install Hy in your project
+uv add hy hyrule
+
+# Test the REPL
+hy
+#+end_src
+
+** Your First Hy Program
+
+#+begin_src hy :tangle hello.hy
+;; hello.hy - Traditional greeting
+(print "Hello from Hy!")
+(print f"Python version: {(hy.I.sys.version)}")
+#+end_src
+
+Run it:
+#+begin_src bash
+hy hello.hy
+#+end_src
+
+* Core Syntax
+
+** Basic Data Types
+
+#+begin_src hy
+;; Numbers
+42                ; integer
+3.14              ; float
+2+3j              ; complex
+
+;; Strings
+"Hello"           ; regular string
+f"Sum: {(+ 1 2)}" ; f-string with Hy expression
+
+;; Collections
+[1 2 3]           ; list
+#(1 2 3)          ; tuple
+#{1 2 3}          ; set
+{"key" "value"}   ; dictionary
+#+end_src
+
+** Variables and Functions
+
+#+begin_src hy
+;; Variable assignment
+(setv name "Pulumi")
+(setv config {"region" "us-east-1"
+              "profile" "dev"})
+
+;; Function definition
+(defn greet [name]
+  "Greet someone by name"
+  (print f"Hello, {name}!"))
+
+;; Call the function
+(greet "Infrastructure Engineer")
+
+;; Anonymous functions
+(setv double (fn [x] (* x 2)))
+(print (double 21))  ; => 42
+#+end_src
+
+** Control Flow
+
+#+begin_src hy
+;; Conditional
+(setv environment "production")
+
+(if (= environment "production")
+  (print "Using production config")
+  (print "Using dev config"))
+
+;; Multiple conditions with cond
+(cond
+  (= environment "production") (print "Prod settings")
+  (= environment "staging")    (print "Stage settings")
+  :else                        (print "Dev settings"))
+
+;; Loops
+(for [i (range 5)]
+  (print f"Count: {i}"))
+
+;; List comprehension
+(setv squared (lfor x [1 2 3 4 5] (* x x)))
+(print squared)  ; => [1, 4, 9, 16, 25]
+#+end_src
+
+* Python Interoperability
+
+** Importing Python Modules
+
+#+begin_src hy
+;; Import entire module
+(import os)
+(print (os.getcwd))
+
+;; Import specific items
+(import [pathlib [Path]])
+(setv home (Path.home))
+
+;; Import with alias
+(import [boto3 :as aws])
+(setv s3 (aws.client "s3"))
+
+;; One-shot import (hy.I)
+(print (hy.I.datetime.datetime.now))
+#+end_src
+
+** Working with Python Objects
+
+#+begin_src hy
+;; Method calls
+(setv my-list [1 2 3])
+(.append my-list 4)
+(print my-list)  ; => [1, 2, 3, 4]
+
+;; Attribute access
+(import datetime)
+(setv now (datetime.datetime.now))
+(print now.year)
+(print now.month)
+
+;; Dictionary operations
+(setv config {"bucket" "my-data"
+              "region" "us-west-2"})
+(print (get config "bucket"))
+(setv (get config "profile") "default")
+#+end_src
+
+* Pulumi with Hy
+
+** Basic Pulumi Program Structure
+
+#+begin_src hy :tangle pulumi-example.hy
+;; Import Pulumi and AWS provider
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Configuration
+(setv config (pulumi.Config))
+(setv bucket-name (config.get "bucketName" "my-default-bucket"))
+
+;; Create S3 bucket
+(setv bucket (aws.s3.BucketV2 "my-bucket"
+                               :bucket bucket-name
+                               :tags {"Environment" "dev"
+                                     "ManagedBy" "Pulumi"}))
+
+;; Export the bucket name
+(pulumi.export "bucket-name" bucket.id)
+(pulumi.export "bucket-arn" bucket.arn)
+#+end_src
+
+** Resource Creation Pattern
+
+#+begin_src hy
+(defn create-s3-bucket [name tags]
+  "Create an S3 bucket with specified tags"
+  (aws.s3.BucketV2 name
+                   :bucket f"{name}-{(pulumi.get-stack)}"
+                   :tags tags))
+
+;; Use the function
+(setv data-bucket 
+  (create-s3-bucket "data" 
+                    {"Type" "Data"
+                     "Retention" "30days"}))
+#+end_src
+
+** Working with Outputs
+
+#+begin_src hy
+;; Apply transformation to outputs
+(setv bucket-url 
+  (pulumi.Output.concat "https://" 
+                        bucket.bucket-domain-name
+                        "/"))
+
+;; Use apply for complex transformations
+(setv bucket-info
+  (bucket.arn.apply 
+    (fn [arn] 
+      {"arn" arn
+       "region" (get (.split arn ":") 3)})))
+
+(pulumi.export "bucket-url" bucket-url)
+(pulumi.export "bucket-info" bucket-info)
+#+end_src
+
+* LocalStack Testing with Hy
+
+** Setting Up boto3 for LocalStack
+
+#+begin_src hy
+(import boto3)
+(import os)
+
+(defn create-localstack-client [service]
+  "Create a boto3 client for LocalStack"
+  (boto3.client service
+                :endpoint-url (os.getenv "AWS_ENDPOINT_URL" 
+                                        "http://localhost:4566")
+                :region-name "us-east-1"
+                :aws-access-key-id "test"
+                :aws-secret-access-key "test"))
+
+;; Use the client
+(setv s3 (create-localstack-client "s3"))
+(print (s3.list-buckets))
+#+end_src
+
+** Testing Infrastructure
+
+#+begin_src hy
+(defn test-bucket-creation []
+  "Test S3 bucket creation in LocalStack"
+  (setv s3 (create-localstack-client "s3"))
+  
+  ;; Create bucket
+  (setv bucket-name "test-bucket")
+  (s3.create-bucket :Bucket bucket-name)
+  
+  ;; Verify it exists
+  (setv buckets (get (s3.list-buckets) "Buckets"))
+  (setv bucket-names (lfor b buckets (get b "Name")))
+  
+  (assert (in bucket-name bucket-names))
+  (print f"✅ Bucket {bucket-name} created successfully"))
+
+(test-bucket-creation)
+#+end_src
+
+* Advanced Patterns
+
+** Error Handling
+
+#+begin_src hy
+(defn safe-resource-create [resource-fn name]
+  "Safely create a resource with error handling"
+  (try
+    (setv resource (resource-fn name))
+    (print f"✅ Created {name}")
+    resource
+    (except [Exception e]
+      (print f"❌ Failed to create {name}: {e}")
+      None)))
+#+end_src
+
+** Macros for Resource Templates
+
+#+begin_src hy
+(defmacro with-tags [base-tags #* body]
+  "Add standard tags to all resources in body"
+  `(let [tags (dict (merge ~base-tags 
+                          {"ManagedBy" "Pulumi"
+                           "CreatedAt" (str (hy.I.datetime.datetime.now))}))]
+     ~@body))
+
+;; Usage
+(with-tags {"Environment" "prod"}
+  (setv bucket (aws.s3.BucketV2 "data" :tags tags))
+  (setv table (aws.dynamodb.Table "users" :tags tags)))
+#+end_src
+
+** Functional Composition
+
+#+begin_src hy
+;; Chain operations functionally
+(import [functools [reduce]])
+
+(defn pipe [value #* functions]
+  "Pipe a value through multiple functions"
+  (reduce (fn [v f] (f v)) functions value))
+
+;; Example: Process bucket name
+(setv final-name
+  (pipe "MyBucket"
+        (fn [x] (.lower x))
+        (fn [x] (.replace x "my" "our"))
+        (fn [x] f"{x}-{(pulumi.get-stack)}")))
+
+(print final-name)  ; => "ourbucket-dev"
+#+end_src
+
+* Common Patterns and Idioms
+
+** Resource Loops
+
+#+begin_src hy
+;; Create multiple similar resources
+(setv environments ["dev" "staging" "prod"])
+
+(setv buckets
+  (dfor env environments
+    [env (aws.s3.BucketV2 f"bucket-{env}"
+                          :bucket f"data-{env}"
+                          :tags {"Environment" env})]))
+
+;; Export all bucket names
+(for [[env bucket] (.items buckets)]
+  (pulumi.export f"bucket-{env}" bucket.id))
+#+end_src
+
+** Conditional Resources
+
+#+begin_src hy
+;; Create resources based on configuration
+(setv config (pulumi.Config))
+(setv enable-backups (config.get-bool "enableBackups" False))
+
+(when enable-backups
+  (setv backup-bucket 
+    (aws.s3.BucketV2 "backups"
+                     :versioning {"enabled" True}
+                     :lifecycle-rules [{"id" "expire-old"
+                                       "expiration" {"days" 90}}])))
+#+end_src
+
+** Resource Dependencies
+
+#+begin_src hy
+;; Explicit dependencies
+(setv vpc (aws.ec2.Vpc "main" :cidr-block "10.0.0.0/16"))
+
+(setv subnet 
+  (aws.ec2.Subnet "public"
+                  :vpc-id vpc.id
+                  :cidr-block "10.0.1.0/24"
+                  :opts (pulumi.ResourceOptions 
+                         :depends-on [vpc])))
+#+end_src
+
+* Best Practices
+
+** Code Organization
+
+#+begin_src hy
+;; resources/s3.hy
+(defn create-bucket-with-policy [name public]
+  "Create S3 bucket with appropriate policy"
+  (setv bucket (aws.s3.BucketV2 name))
+  
+  (when public
+    (aws.s3.BucketPublicAccessBlock 
+      f"{name}-pab"
+      :bucket bucket.id
+      :block-public-acls False))
+  
+  bucket)
+
+;; __main__.hy
+(import [resources.s3 [create-bucket-with-policy]])
+
+(setv website-bucket 
+  (create-bucket-with-policy "website" True))
+#+end_src
+
+** Testing
+
+#+begin_src hy
+;; test_infrastructure.hy
+(import unittest)
+(import [unittest.mock [Mock patch]])
+
+(defclass TestBucketCreation [unittest.TestCase]
+  (defn test-bucket-name-format [self]
+    (setv bucket-name (format-bucket-name "test"))
+    (.assertTrue self (.startswith bucket-name "test-"))
+    (.assertIn self (pulumi.get-stack) bucket-name)))
+
+(unittest.main)
+#+end_src
+
+* Debugging Tips
+
+** REPL Exploration
+
+#+begin_src hy
+;; Start Hy REPL
+$ hy
+
+;; Import and explore
+=> (import pulumi-aws)
+=> (dir pulumi-aws.s3)
+
+;; Test expressions
+=> (setv test-tags {"Env" "dev"})
+=> (get test-tags "Env")
+"dev"
+
+;; Check types
+=> (type test-tags)
+<class 'dict'>
+#+end_src
+
+** Print Debugging
+
+#+begin_src hy
+(defn debug [label value]
+  "Print debug information"
+  (print f"🔍 {label}: {value} (type: {(type value)})")
+  value)  ; Return value for chaining
+
+;; Usage
+(setv result 
+  (-> (some-function)
+      (debug "After function")
+      (another-function)
+      (debug "Final result")))
+#+end_src
+
+* Resources and Next Steps
+
+- [[https://hylang.org][Official Hy Documentation]]
+- [[https://github.com/hylang/hyrule][Hyrule - Hy utility library]]
+- [[https://www.pulumi.com/docs/][Pulumi Documentation]]
+- Experiment files in `experiments/` directory
+
+Practice with the numbered experiments:
+1. Start with `002-github-teams-hy` for basic Hy + Pulumi
+2. Try `003-aws-ec2-hy` for AWS resources
+3. Explore `006-s3-buckets-hy` for S3 and LocalStack
+
+Remember: Hy gives you Lisp's expressiveness with Python's ecosystem!
