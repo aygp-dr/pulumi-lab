@@ -1,0 +1,3 @@
+name: custom-provider-hy
+runtime: python
+description: Custom Pulumi provider implementation with Hy
