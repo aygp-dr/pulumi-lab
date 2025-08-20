@@ -143,9 +143,11 @@
    'org-babel-load-languages
    '((python . t)
      (shell . t)
-     (hy . t)
-     (emacs-lisp . t)
-     (plantuml . t)))
+     (emacs-lisp . t)))
+  
+  ;; Only load hy if available
+  (when (featurep 'hy-mode)
+    (add-to-list 'org-babel-load-languages '(hy . t)))
   
   ;; Don't ask for confirmation when executing code blocks
   (setq org-confirm-babel-evaluate nil)
