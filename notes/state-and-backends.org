@@ -1,0 +1,294 @@
+#+TITLE: Pulumi State and Backends - Cloud-Free Notes
+#+AUTHOR: Pulumi Lab
+#+DATE: 2025-08-20
+#+STARTUP: overview
+
+* Overview
+
+Notes on Pulumi state management and backends for future cloud exploration.
+Currently focusing on local development with LocalStack.
+
+* State Management Concepts
+
+** What is Pulumi State?
+- Tracks mapping between Pulumi resources and real infrastructure
+- Stores resource metadata, dependencies, and configuration
+- Critical for understanding what exists vs. what should exist
+- Enables diff operations (preview/update/destroy)
+
+** State Storage Locations
+- **Local Files** (~/.pulumi/stacks/) - Default for development
+- **Pulumi Service** (app.pulumi.com) - Managed backend
+- **Self-Managed** (S3, Azure Blob, GCS, etc.) - Custom backends
+- **Database** (PostgreSQL, MySQL) - For enterprise scenarios
+
+* Backend Types
+
+** 1. Local Backend (Current Setup)
+#+begin_src bash
+# Already using this implicitly
+pulumi login --local
+#+end_src
+
+*** Characteristics:
+- State stored in ~/.pulumi/stacks/
+- No collaboration features
+- Good for development and LocalStack testing
+- No encryption at rest by default
+- Simple and fast
+
+** 2. Pulumi Service Backend (Future)
+#+begin_src bash
+# When ready for cloud
+pulumi login
+# or
+pulumi login https://app.pulumi.com
+#+end_src
+
+*** Features:
+- Managed state storage
+- Team collaboration
+- Web UI for stack management
+- Encrypted state storage
+- Audit logs and history
+- Integration with CI/CD
+
+** 3. Self-Managed Backends (Future Cloud)
+#+begin_src bash
+# S3 backend example
+pulumi login s3://my-pulumi-state-bucket
+
+# Azure Blob example  
+pulumi login azblob://my-container
+
+# Google Cloud Storage
+pulumi login gs://my-pulumi-state-bucket
+
+# File share
+pulumi login file://shared/pulumi-state
+#+end_src
+
+* Current LocalStack Workflow
+
+** State Location
+#+begin_src bash
+# Check current backend
+pulumi whoami
+
+# List stacks
+pulumi stack ls
+
+# State file location
+ls -la ~/.pulumi/stacks/
+#+end_src
+
+** Stack Management
+#+begin_src bash
+# Create new stack
+pulumi stack init dev-localstack
+
+# Switch stacks
+pulumi stack select dev-localstack
+
+# Stack info
+pulumi stack
+
+# Export state for backup
+pulumi stack export > stack-backup.json
+#+end_src
+
+* Future Cloud Migration Notes
+
+** When to Consider Cloud Backends:
+- [ ] Team collaboration needed
+- [ ] Production workloads
+- [ ] Compliance requirements
+- [ ] CI/CD pipeline integration
+- [ ] State backup and recovery
+- [ ] Audit trail requirements
+
+** Migration Path:
+1. Export current local state
+2. Set up cloud backend
+3. Import state to new backend
+4. Update team workflows
+5. Configure CI/CD integration
+
+** Backend Selection Criteria:
+- Team size and collaboration needs
+- Security and compliance requirements
+- Integration with existing tools
+- Cost considerations
+- Geographic requirements
+
+* State Security Considerations
+
+** Local Development:
+- State files contain resource metadata
+- May include sensitive information
+- Keep .pulumi/ out of version control
+- Use disk encryption for laptops
+
+** Cloud Backends:
+- Encryption in transit and at rest
+- Access control and authentication
+- Audit logging
+- Backup and disaster recovery
+
+* Experiment Integration
+
+** Current Lab Setup:
+- All experiments use local backend
+- Perfect for LocalStack testing
+- Easy state inspection and debugging
+- No cloud dependencies
+
+** Backend Configuration per Experiment:
+#+begin_src bash
+cd experiments/001-github-provider
+pulumi stack init github-local
+pulumi config set github:token $GITHUB_TOKEN --secret
+
+cd ../017-providers-localstack-hy  
+pulumi stack init localstack-dev
+# LocalStack-specific config
+#+end_src
+
+* State Inspection Commands
+
+** Useful for Debugging:
+#+begin_src bash
+# View current state
+pulumi stack export
+
+# See what resources exist
+pulumi stack --show-urns
+
+# Check for drift
+pulumi preview --diff
+
+# Refresh state from actual infrastructure
+pulumi refresh
+
+# Import existing resources
+pulumi import aws:s3/bucket:Bucket my-bucket existing-bucket-name
+#+end_src
+
+* Backup and Recovery
+
+** Local Backup Strategy:
+#+begin_src bash
+#!/bin/bash
+# Backup all stack states
+BACKUP_DIR="backups/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+for stack in $(pulumi stack ls --json | jq -r '.[].name'); do
+    pulumi stack select "$stack"
+    pulumi stack export > "$BACKUP_DIR/$stack.json"
+done
+#+end_src
+
+** Recovery:
+#+begin_src bash
+# Restore stack from backup
+pulumi stack import < backup-file.json
+#+end_src
+
+* Configuration Management
+
+** Stack-Specific Config:
+#+begin_src bash
+# Set config per stack
+pulumi config set aws:region us-west-2
+pulumi config set --secret database:password mysecret
+
+# Environment-specific stacks
+pulumi stack init dev
+pulumi stack init staging  
+pulumi stack init prod
+#+end_src
+
+** Config Organization:
+- Use stack names for environments
+- Store secrets in stack config
+- Use Pulumi.yaml for defaults
+- Environment variables for CI/CD
+
+* TODO: Future Cloud Backend Setup
+
+** Pulumi Service Setup:
+- [ ] Create Pulumi account
+- [ ] Configure organization
+- [ ] Set up team access
+- [ ] Migrate existing stacks
+- [ ] Configure CI/CD integration
+
+** Self-Managed Backend:
+- [ ] Choose cloud provider
+- [ ] Set up storage bucket
+- [ ] Configure access policies
+- [ ] Set up encryption
+- [ ] Test backup/restore
+
+** Enterprise Features:
+- [ ] SAML/SSO integration
+- [ ] Policy as Code
+- [ ] Compliance scanning
+- [ ] Cost management
+- [ ] Multi-cloud governance
+
+* Notes for Cloud Migration
+
+** State File Structure:
+- JSON format with resource metadata
+- Contains resource URNs and properties  
+- Includes dependency graph
+- May contain sensitive data
+- Should be encrypted in cloud storage
+
+** Best Practices:
+- Regular state backups
+- Test state restoration procedures
+- Monitor state file growth
+- Use state encryption
+- Implement access controls
+- Audit state access
+
+** Common Issues:
+- State corruption
+- Concurrent modifications
+- State drift detection
+- Resource import challenges
+- Backend migration complexity
+
+* Integration with Current Lab
+
+** LocalStack Compatibility:
+- All experiments work with local backend
+- State tracks LocalStack resources
+- Easy to reset and restart
+- Perfect for development workflow
+
+** Testing State Operations:
+#+begin_src bash
+# Test state export/import
+cd experiments/017-providers-localstack-hy
+pulumi up
+pulumi stack export > test-state.json
+pulumi stack rm --yes
+pulumi stack init test-restore
+pulumi stack import < test-state.json
+pulumi preview  # Should show no changes
+#+end_src
+
+* References
+
+- [[https://www.pulumi.com/docs/iac/concepts/state-and-backends/][Pulumi State and Backends Documentation]]
+- [[https://www.pulumi.com/docs/cli/commands/pulumi_login/][pulumi login Command Reference]]
+- [[https://www.pulumi.com/docs/cli/commands/pulumi_stack/][pulumi stack Command Reference]]
+- [[https://www.pulumi.com/docs/support/troubleshooting/][State Troubleshooting Guide]]
+
+---
+
+*Note: This document serves as preparation for future cloud backend adoption while maintaining current local development workflow.*
