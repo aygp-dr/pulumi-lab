@@ -13,8 +13,6 @@
 
 * Overview
 
-⚠️ *EXPERIMENTAL PROJECT* ⚠️
-
 This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD. The project demonstrates advanced IaC patterns, policy as code, and automation API capabilities.
 
 *Current Environment:*

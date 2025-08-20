@@ -1,34 +1,22 @@
+# Pulumi Lab - Experimental Infrastructure as Code with Hy
+# Python 3.11 + Hy 1.0.0 + FreeBSD 14.3-RELEASE
+
 [project]
 name = "pulumi-lab"
 version = "0.1.0"
-description = "🧪 EXPERIMENTAL Pulumi Infrastructure as Code with Hy (Python 3.11 + Hy 1.0.0)"
-readme = "README.org"
+description = "🧪 EXPERIMENTAL Pulumi Infrastructure as Code with Hy"
 requires-python = ">=3.11"
-authors = [
-    {name = "aygp-dr"}
-]
-keywords = ["pulumi", "hy", "infrastructure", "experimental", "freebsd"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: System :: Systems Administration",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-]
 dependencies = [
     "pulumi>=3.0.0",
-    "pulumi-github>=6.0.0",
+    "pulumi-github>=6.0.0", 
     "pulumi-aws>=6.0.0",
-    "pulumi-policy>=1.0.0",
     "hy>=1.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "black>=23.0.0",
+    "black>=23.0.0", 
     "mypy>=1.0.0",
     "ruff>=0.1.0",
     "ipython>=8.0.0",
@@ -44,23 +32,8 @@ policy = [
     "pulumi-policy>=1.0.0",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [tool.uv]
-dev-dependencies = [
-    "ipython>=8.0.0",
-]
-
-[project.urls]
-Homepage = "https://github.com/aygp-dr/pulumi-lab"
-Repository = "https://github.com/aygp-dr/pulumi-lab.git"
-Issues = "https://github.com/aygp-dr/pulumi-lab/issues"
-Documentation = "https://github.com/aygp-dr/pulumi-lab/blob/main/README.org"
-
-[project.scripts]
-publish-readme = "scripts.publish_readme:main"
+package = false
 
 [tool.ruff]
 line-length = 88
