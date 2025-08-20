@@ -1,0 +1,16 @@
+name: apply-transformations-hy
+runtime: python
+description: Output.apply() transformations and complex data flows with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+
+config:
+  app-name:
+    type: string
+    description: Application name for apply transformations
+    default: "workshop"

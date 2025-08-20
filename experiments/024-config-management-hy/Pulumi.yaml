@@ -1,0 +1,173 @@
+name: config-management-hy
+runtime: python
+description: Comprehensive configuration management patterns with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+
+config:
+  # Application configuration
+  app-name:
+    type: string
+    description: Application name
+    default: "workshop"
+  
+  instance-count:
+    type: integer
+    description: Number of instances to deploy
+    default: 1
+    minimum: 1
+    maximum: 10
+  
+  enable-monitoring:
+    type: boolean
+    description: Enable detailed monitoring
+    default: false
+  
+  budget-limit:
+    type: number
+    description: Budget limit in USD
+    default: 100.0
+    minimum: 0
+  
+  # Required configuration
+  domain-name:
+    type: string
+    description: Domain name for the application
+  
+  notification-email:
+    type: string
+    description: Email for notifications
+  
+  # Secret configuration
+  database-password:
+    type: string
+    description: Database password
+    secret: true
+  
+  api-key:
+    type: string
+    description: API key for external services
+    secret: true
+    default: ""
+  
+  ssl-certificate:
+    type: string
+    description: SSL certificate content
+    secret: true
+    default: ""
+  
+  # Network configuration
+  vpc-cidr:
+    type: string
+    description: VPC CIDR block
+    default: "10.0.0.0/16"
+  
+  allowed-cidrs:
+    type: array
+    description: Allowed CIDR blocks for access
+    items:
+      type: string
+    default: ["10.0.0.0/8", "172.16.0.0/12"]
+  
+  # Subnet configuration
+  subnets:
+    type: array
+    description: Subnet configurations
+    items:
+      type: object
+      properties:
+        cidr:
+          type: string
+        type:
+          type: string
+          enum: ["public", "private"]
+        az:
+          type: string
+    default:
+      - cidr: "10.0.1.0/24"
+        type: "public"
+        az: "a"
+      - cidr: "10.0.2.0/24"
+        type: "private"
+        az: "b"
+  
+  # Backup schedules
+  backup-schedules:
+    type: array
+    description: Cron expressions for backup schedules
+    items:
+      type: string
+    default:
+      - "0 2 * * *"   # Daily at 2 AM
+      - "0 2 * * 0"   # Weekly on Sunday
+  
+  # Instance type per environment
+  instance-type:
+    type: string
+    description: EC2 instance type
+    default: "t3.micro"
+  
+  # Maximum instances per environment
+  max-instances:
+    type: integer
+    description: Maximum number of instances
+    default: 2
+    minimum: 1
+  
+  # Feature flags
+  backup-enabled:
+    type: boolean
+    description: Enable backup functionality
+    default: false
+  
+  encryption-enabled:
+    type: boolean
+    description: Enable encryption at rest
+    default: false
+
+# Nested configuration for complex objects
+app:
+  database:
+    type: object
+    description: Database configuration
+    properties:
+      engine:
+        type: string
+        enum: ["postgres", "mysql", "mariadb"]
+        default: "postgres"
+      version:
+        type: string
+        default: "14"
+      instance-class:
+        type: string
+        default: "db.t3.micro"
+      storage:
+        type: integer
+        default: 20
+        minimum: 20
+        maximum: 1000
+  
+  monitoring:
+    type: object
+    description: Monitoring configuration
+    properties:
+      retention-days:
+        type: integer
+        default: 30
+        minimum: 1
+        maximum: 365
+      detailed-monitoring:
+        type: boolean
+        default: false
+      log-level:
+        type: string
+        enum: ["DEBUG", "INFO", "WARN", "ERROR"]
+        default: "INFO"
+      metrics-enabled:
+        type: boolean
+        default: true

@@ -1,0 +1,25 @@
+name: provider-functions-audit-hy
+runtime: python
+description: Comprehensive infrastructure auditing using provider functions with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+
+config:
+  app-name:
+    type: string
+    description: Application name for audit context
+    default: "workshop"
+
+template:
+  description: Infrastructure audit template using provider functions
+  important: |
+    This audit program uses read-only provider functions to:
+    - Discover existing infrastructure
+    - Identify security risks
+    - Find cost optimization opportunities
+    - Check compliance status
+    
+    All operations are read-only and safe to run in any environment.

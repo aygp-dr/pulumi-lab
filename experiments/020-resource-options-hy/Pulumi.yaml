@@ -1,0 +1,16 @@
+name: resource-options-hy
+runtime: python
+description: Comprehensive resource options demonstration with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+
+config:
+  app-name:
+    type: string
+    description: Application name for resource options demo
+    default: "workshop"

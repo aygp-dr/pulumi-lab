@@ -1,0 +1,18 @@
+name: inputs-outputs-secrets-hy
+runtime: python
+description: Comprehensive inputs, outputs, and secrets management with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+    - name: tls
+      path: pulumi-tls
+
+config:
+  app-name:
+    type: string
+    description: Application name for secrets and resource naming
+    default: "workshop"
