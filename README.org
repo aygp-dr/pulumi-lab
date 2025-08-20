@@ -771,16 +771,14 @@ echo "LocalStack ready for testing!"
 
 ** Key Commands
 
-#+begin_src org
 | Command | Description |
-|---------|-------------|
-| pulumi new | Create new project |
-| pulumi up | Deploy infrastructure |
-| pulumi preview | Preview changes |
-| pulumi destroy | Tear down infrastructure |
-| pulumi stack | Manage stacks |
-| pulumi config | Manage configuration |
-#+end_src
+|---------+-------------|
+| ~pulumi new~ | Create new project |
+| ~pulumi up~ | Deploy infrastructure |
+| ~pulumi preview~ | Preview changes |
+| ~pulumi destroy~ | Tear down infrastructure |
+| ~pulumi stack~ | Manage stacks |
+| ~pulumi config~ | Manage configuration |
 
 ** Troubleshooting
 
@@ -820,11 +818,11 @@ python policy-demo.py
 #+end_src
 
 **** Key Policy Categories
-- **S3 Security**: Public access, encryption, versioning
-- **IAM Security**: Wildcard permissions, inline policies
-- **Lambda Security**: Hardcoded secrets, timeout limits
-- **Network Security**: HTTPS enforcement, security groups  
-- **Database Security**: RDS encryption, public access
+- *S3 Security*: Public access, encryption, versioning
+- *IAM Security*: Wildcard permissions, inline policies
+- *Lambda Security*: Hardcoded secrets, timeout limits
+- *Network Security*: HTTPS enforcement, security groups  
+- *Database Security*: RDS encryption, public access
 
 *** 031-automation-api-hy: Enhanced Automation API
 **** S3 Website Pattern with LocalStack
