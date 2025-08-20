@@ -1,0 +1,24 @@
+name: dynamic-providers-advanced-hy
+runtime: python
+description: Advanced dynamic providers for Git, CI/CD, and health checks with Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+
+config:
+  app-name:
+    type: string
+    description: Application name for dynamic resources
+    default: "workshop"
+
+# Additional dependencies for dynamic providers
+template:
+  description: Advanced dynamic providers template
+  important: |
+    This project requires additional Python packages:
+    - requests
+    - gitpython (optional, for advanced Git operations)
+    
+    Install with: pip install requests gitpython

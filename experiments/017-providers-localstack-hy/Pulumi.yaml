@@ -1,0 +1,22 @@
+name: providers-localstack-hy
+runtime: python
+description: Provider configuration with LocalStack and Random provider using Hy
+
+plugins:
+  providers:
+    - name: aws
+      path: pulumi-aws
+    - name: random
+      path: pulumi-random
+
+config:
+  # LocalStack configuration
+  localstack:endpoint:
+    type: string
+    description: LocalStack endpoint URL
+    default: "http://localhost:4566"
+  
+  localstack:region:
+    type: string
+    description: AWS region for LocalStack
+    default: "us-east-1"

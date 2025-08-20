@@ -1,0 +1,9 @@
+name: resource-names-hy
+runtime: python
+description: Resource naming patterns and conventions with Hy
+
+config:
+  app-name:
+    type: string
+    description: Application name for resource naming
+    default: "workshop"

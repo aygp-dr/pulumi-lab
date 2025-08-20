@@ -1,0 +1,769 @@
+#+TITLE: Pulumi Lab - Infrastructure as Code with Hy
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+#+STARTUP: overview
+#+PROPERTY: header-args :results output :exports both
+
+* Overview
+
+Exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD.
+
+** Quick Start
+
+#+begin_src bash :dir . :results verbatim
+# Install Pulumi
+curl -fsSL https://get.pulumi.com | sh
+
+# Set up environment
+gmake install setup-hy
+
+# Run first experiment
+cd experiments/001-github-provider
+pulumi up
+#+end_src
+
+** Project Structure
+
+#+begin_src bash :results verbatim
+tree -L 2 -d .
+#+end_src
+
+#+RESULTS:
+: pulumi-lab/
+: ├── experiments/          # Numbered experiments
+: │   ├── 001-github-provider/
+: │   ├── 002-github-teams-hy/
+: │   ├── 003-aws-ec2-hy/
+: │   └── ...
+: ├── notes/               # Documentation
+: ├── research/            # Pulumi core submodule
+: └── scripts/             # Utilities
+
+* Workshop Agenda (1 Hour)
+
+** [0:00-0:10] Introduction & Setup
+   :PROPERTIES:
+   :CUSTOM_ID: intro
+   :END:
+
+*** Prerequisites Check
+
+#+begin_src bash :results output
+which pulumi || echo "Pulumi not installed"
+which python3 || echo "Python not installed"
+which uv || echo "uv not installed"
+#+end_src
+
+*** Environment Setup
+
+#+begin_src bash :dir . :results verbatim
+# Install dependencies
+gmake install setup-hy
+
+# Configure Pulumi backend
+pulumi login --local
+#+end_src
+
+*** Verify Hy Installation
+
+#+begin_src hy :results output
+(print "Hy is working!")
+(print f"Python interop: {(+ 2 2)}")
+#+end_src
+
+** [0:10-0:20] Core Concepts with Hy
+   :PROPERTIES:
+   :CUSTOM_ID: concepts
+   :END:
+
+*** Basic Pulumi Program Structure
+
+#+begin_src hy :tangle experiments/000-basics-hy/__main__.hy
+;; Basic Pulumi program in Hy
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Configuration
+(setv config (pulumi.Config))
+(setv stack-name (pulumi.get-stack))
+
+;; Create a resource
+(setv bucket (aws.s3.BucketV2 "my-bucket"))
+
+;; Export outputs
+(pulumi.export "bucket_name" (. bucket bucket))
+(pulumi.export "bucket_arn" (. bucket arn))
+#+end_src
+
+*** Understanding State Management
+
+#+begin_src hy :results output
+(import pulumi)
+
+;; Pulumi tracks state automatically
+(print "State locations:")
+(print "- Local: ~/.pulumi/stacks/")
+(print "- S3: s3://bucket/prefix")
+(print "- Pulumi Service: app.pulumi.com")
+#+end_src
+
+** [0:20-0:30] GitHub Provider Deep Dive
+   :PROPERTIES:
+   :CUSTOM_ID: github-provider
+   :END:
+
+*** Create Repository with Teams
+
+#+begin_src hy :tangle experiments/008-github-full-hy/__main__.hy
+;; Complete GitHub setup in Hy
+(import pulumi)
+(import [pulumi-github :as github])
+
+;; Configuration
+(setv config (pulumi.Config))
+(setv repo-prefix (config.get "repoPrefix"))
+
+;; Create repository
+(setv lab-repo
+  (github.Repository "lab-repo"
+    :name f"{repo-prefix}-workshop"
+    :description "Created during Pulumi workshop"
+    :visibility "private"
+    :has-issues True
+    :auto-init True
+    :gitignore-template "Python"
+    :license-template "mit"))
+
+;; Create webhook
+(setv webhook
+  (github.RepositoryWebhook "webhook"
+    :repository (. lab-repo name)
+    :configuration {:url "https://example.com/hook"
+                    :content-type "json"
+                    :insecure-ssl False}
+    :active True
+    :events ["push" "pull_request"]))
+
+;; Branch protection
+(setv protection
+  (github.BranchProtection "main-protection"
+    :repository-id (. lab-repo node-id)
+    :pattern "main"
+    :enforce-admins True
+    :required-status-checks [{:strict True
+                             :contexts ["ci/build"]}]))
+
+;; Outputs
+(pulumi.export "repo_url" (. lab-repo html-url))
+(pulumi.export "repo_ssh" (. lab-repo ssh-clone-url))
+#+end_src
+
+*** Run GitHub Provider Demo
+
+#+begin_src bash :dir experiments/008-github-full-hy :results verbatim
+# Initialize stack
+pulumi stack init workshop --secrets-provider passphrase
+
+# Configure GitHub token
+pulumi config set github:token $GITHUB_TOKEN --secret
+
+# Preview changes
+pulumi preview
+#+end_src
+
+** [0:30-0:40] AWS Infrastructure Patterns
+   :PROPERTIES:
+   :CUSTOM_ID: aws-patterns
+   :END:
+
+*** VPC and Networking
+
+#+begin_src hy :tangle experiments/009-aws-vpc-hy/__main__.hy
+;; Complete VPC setup in Hy
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Create VPC
+(setv main-vpc
+  (aws.ec2.Vpc "main"
+    :cidr-block "10.0.0.0/16"
+    :enable-dns-hostnames True
+    :enable-dns-support True
+    :tags {:Name "workshop-vpc"}))
+
+;; Create subnets
+(setv public-subnet
+  (aws.ec2.Subnet "public"
+    :vpc-id (. main-vpc id)
+    :cidr-block "10.0.1.0/24"
+    :availability-zone "us-west-2a"
+    :map-public-ip-on-launch True
+    :tags {:Name "public-subnet"}))
+
+(setv private-subnet
+  (aws.ec2.Subnet "private"
+    :vpc-id (. main-vpc id)
+    :cidr-block "10.0.2.0/24"
+    :availability-zone "us-west-2a"
+    :tags {:Name "private-subnet"}))
+
+;; Internet Gateway
+(setv igw
+  (aws.ec2.InternetGateway "main"
+    :vpc-id (. main-vpc id)
+    :tags {:Name "main-igw"}))
+
+;; Route table
+(setv public-route-table
+  (aws.ec2.RouteTable "public"
+    :vpc-id (. main-vpc id)
+    :routes [{:cidr-block "0.0.0.0/0"
+              :gateway-id (. igw id)}]
+    :tags {:Name "public-routes"}))
+
+;; Associate route table
+(setv route-association
+  (aws.ec2.RouteTableAssociation "public"
+    :subnet-id (. public-subnet id)
+    :route-table-id (. public-route-table id)))
+
+;; NAT Gateway for private subnet
+(setv eip
+  (aws.ec2.Eip "nat"
+    :domain "vpc"
+    :tags {:Name "nat-eip"}))
+
+(setv nat-gateway
+  (aws.ec2.NatGateway "main"
+    :subnet-id (. public-subnet id)
+    :allocation-id (. eip id)
+    :tags {:Name "main-nat"}))
+
+;; Outputs
+(pulumi.export "vpc_id" (. main-vpc id))
+(pulumi.export "public_subnet_id" (. public-subnet id))
+(pulumi.export "private_subnet_id" (. private-subnet id))
+#+end_src
+
+*** Lambda Function with API Gateway
+
+#+begin_src hy :tangle experiments/010-lambda-api-hy/__main__.hy
+;; Serverless API with Lambda and API Gateway
+(import pulumi)
+(import [pulumi-aws :as aws])
+(import json)
+
+;; Lambda execution role
+(setv lambda-role
+  (aws.iam.Role "lambda-role"
+    :assume-role-policy (json.dumps
+      {:Version "2012-10-17"
+       :Statement [{:Action "sts:AssumeRole"
+                    :Principal {:Service "lambda.amazonaws.com"}
+                    :Effect "Allow"}]})))
+
+;; Attach basic execution policy
+(setv policy-attachment
+  (aws.iam.RolePolicyAttachment "lambda-logs"
+    :role (. lambda-role name)
+    :policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"))
+
+;; Lambda function code
+(setv lambda-code """
+def handler(event, context):
+    import json
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'message': 'Hello from Pulumi Lambda!',
+            'path': event.get('path', '/'),
+            'method': event.get('httpMethod', 'GET')
+        })
+    }
+""")
+
+;; Create Lambda function
+(setv api-lambda
+  (aws.lambda.Function "api"
+    :code (pulumi.AssetArchive 
+            {:".": (pulumi.FileArchive "./lambda.zip")})
+    :role (. lambda-role arn)
+    :handler "index.handler"
+    :runtime "python3.9"
+    :timeout 30
+    :memory-size 256
+    :environment {:variables {:ENV "workshop"}}))
+
+;; API Gateway
+(setv api-gw
+  (aws.apigatewayv2.Api "http-api"
+    :protocol-type "HTTP"
+    :cors-configuration 
+      {:allow-origins ["*"]
+       :allow-methods ["GET" "POST" "OPTIONS"]
+       :allow-headers ["*"]}))
+
+;; Lambda integration
+(setv integration
+  (aws.apigatewayv2.Integration "lambda"
+    :api-id (. api-gw id)
+    :integration-type "AWS_PROXY"
+    :integration-uri (. api-lambda invoke-arn)))
+
+;; Routes
+(setv default-route
+  (aws.apigatewayv2.Route "default"
+    :api-id (. api-gw id)
+    :route-key "$default"
+    :target (pulumi.Output.concat "integrations/" (. integration id))))
+
+;; Stage
+(setv stage
+  (aws.apigatewayv2.Stage "dev"
+    :api-id (. api-gw id)
+    :name "dev"
+    :auto-deploy True))
+
+;; Lambda permission for API Gateway
+(setv lambda-permission
+  (aws.lambda.Permission "api-gw"
+    :action "lambda:InvokeFunction"
+    :function (. api-lambda name)
+    :principal "apigateway.amazonaws.com"
+    :source-arn (pulumi.Output.concat 
+                  (. api-gw execution-arn) "/*/*")))
+
+;; Outputs
+(pulumi.export "api_endpoint" (. api-gw api-endpoint))
+(pulumi.export "lambda_arn" (. api-lambda arn))
+#+end_src
+
+** [0:40-0:50] Advanced Patterns
+   :PROPERTIES:
+   :CUSTOM_ID: advanced
+   :END:
+
+*** Policy as Code
+
+#+begin_src hy :tangle experiments/011-policy-pack-hy/__main__.hy
+;; Policy enforcement in Hy
+(import pulumi)
+(import [pulumi-aws :as aws])
+(import [pulumi.policy :as policy])
+
+;; Define policy pack
+(defclass SecurityPolicyPack [policy.PolicyPack]
+  (defn __init__ [self]
+    (super.__init__ 
+      "security-policies"
+      :policies [
+        ;; Require encryption on S3 buckets
+        (policy.ResourceValidationPolicy 
+          "s3-encryption-required"
+          "S3 buckets must have encryption enabled"
+          (fn [args validation-args]
+            (when (= (. args resource-type) "aws:s3/bucket:Bucket")
+              (let [encryption (get (. args props) "serverSideEncryptionConfiguration")]
+                (when (not encryption)
+                  (policy.ReportViolation 
+                    "S3 bucket must have encryption enabled")))))
+          
+        ;; Require tags
+        (policy.ResourceValidationPolicy
+          "required-tags"
+          "Resources must have required tags"
+          (fn [args validation-args]
+            (let [tags (get (. args props) "tags" {})]
+              (when (not (get tags "Environment"))
+                (policy.ReportViolation
+                  "Missing required tag: Environment"))
+              (when (not (get tags "Owner"))
+                (policy.ReportViolation
+                  "Missing required tag: Owner")))))]))
+
+;; Apply policies to resources
+(setv compliant-bucket
+  (aws.s3.BucketV2 "compliant"
+    :server-side-encryption-configuration
+      {:rule {:apply-server-side-encryption-by-default
+              {:sse-algorithm "AES256"}}}
+    :tags {:Environment "workshop"
+           :Owner "pulumi-lab"}))
+
+(pulumi.export "bucket_status" "compliant")
+#+end_src
+
+*** Custom Resource Providers
+
+#+begin_src hy :tangle experiments/012-custom-provider-hy/__main__.hy
+;; Custom provider for external services
+(import pulumi)
+(import [pulumi.dynamic :as dynamic])
+(import requests)
+(import time)
+
+;; Custom DNS provider
+(defclass DnsProvider [dynamic.ResourceProvider]
+  
+  (defn create [self inputs]
+    "Create DNS record in external system"
+    (setv record-type (get inputs "type"))
+    (setv name (get inputs "name"))
+    (setv value (get inputs "value"))
+    
+    ;; Simulate API call
+    (setv record-id f"{name}-{(int (time.time))}")
+    
+    ;; Would normally call external API here
+    ;; (requests.post "https://dns-api.example.com/records" ...)
+    
+    (dynamic.CreateResult 
+      record-id
+      {:id record-id
+       :name name
+       :type record-type
+       :value value
+       :status "active"}))
+  
+  (defn update [self id old new]
+    "Update DNS record"
+    (dynamic.UpdateResult
+      {:id id
+       :name (get new "name")
+       :type (get new "type")
+       :value (get new "value")
+       :status "updated"}))
+  
+  (defn delete [self id props]
+    "Delete DNS record"
+    ;; Would call delete API
+    None))
+
+;; DNS record resource
+(defclass DnsRecord [dynamic.Resource]
+  (defn __init__ [self name props opts None]
+    (super.__init__
+      (DnsProvider)
+      name
+      {:name (get props "name")
+       :type (get props "type")
+       :value (get props "value")}
+      opts)))
+
+;; Use custom provider
+(setv web-dns
+  (DnsRecord "web"
+    {:name "workshop.example.com"
+     :type "A"
+     :value "10.0.1.50"}))
+
+(setv api-dns
+  (DnsRecord "api"
+    {:name "api.workshop.example.com"
+     :type "CNAME"
+     :value "workshop.example.com"}))
+
+(pulumi.export "web_dns_id" (. web-dns id))
+(pulumi.export "api_dns_id" (. api-dns id))
+#+end_src
+
+** [0:50-1:00] Production Patterns & Wrap-up
+   :PROPERTIES:
+   :CUSTOM_ID: production
+   :END:
+
+*** Multi-Stack Application
+
+#+begin_src hy :tangle experiments/013-multi-stack-hy/__main__.hy
+;; Multi-stack application deployment
+(import pulumi)
+(import [pulumi-aws :as aws])
+(import [pulumi-kubernetes :as k8s])
+
+(setv config (pulumi.Config))
+(setv stack (pulumi.get-stack))
+
+;; Stack-specific configuration
+(cond
+  ;; Development stack
+  [(= stack "dev")
+   (do
+     (setv instance-type "t3.micro")
+     (setv replica-count 1)
+     (setv environment "development"))]
+  
+  ;; Staging stack
+  [(= stack "staging")
+   (do
+     (setv instance-type "t3.small")
+     (setv replica-count 2)
+     (setv environment "staging"))]
+  
+  ;; Production stack
+  [(= stack "prod")
+   (do
+     (setv instance-type "t3.medium")
+     (setv replica-count 3)
+     (setv environment "production"))])
+
+;; Shared infrastructure component
+(defclass ApplicationStack [pulumi.ComponentResource]
+  
+  (defn __init__ [self name opts None]
+    (super.__init__ "custom:app:Stack" name {} opts)
+    
+    ;; ECS Cluster
+    (setv cluster
+      (aws.ecs.Cluster f"{name}-cluster"
+        :opts (pulumi.ResourceOptions :parent self)))
+    
+    ;; Application Load Balancer
+    (setv alb
+      (aws.lb.LoadBalancer f"{name}-alb"
+        :load-balancer-type "application"
+        :subnets (config.require-object "subnet_ids")
+        :security-groups [(config.require "alb_sg_id")]
+        :tags {:Environment environment
+               :Stack stack}
+        :opts (pulumi.ResourceOptions :parent self)))
+    
+    ;; Target Group
+    (setv target-group
+      (aws.lb.TargetGroup f"{name}-tg"
+        :port 80
+        :protocol "HTTP"
+        :vpc-id (config.require "vpc_id")
+        :target-type "ip"
+        :health-check {:enabled True
+                       :path "/health"
+                       :interval 30}
+        :opts (pulumi.ResourceOptions :parent self)))
+    
+    ;; Listener
+    (setv listener
+      (aws.lb.Listener f"{name}-listener"
+        :load-balancer-arn (. alb arn)
+        :port 80
+        :protocol "HTTP"
+        :default-actions [{:type "forward"
+                          :target-group-arn (. target-group arn)}]
+        :opts (pulumi.ResourceOptions :parent self)))
+    
+    ;; Store references
+    (setv self.cluster-id (. cluster id))
+    (setv self.alb-dns (. alb dns-name))
+    
+    (self.register-outputs
+      {:cluster_id self.cluster-id
+       :alb_endpoint self.alb-dns})))
+
+;; Deploy stack
+(setv app-stack (ApplicationStack environment))
+
+;; Stack outputs
+(pulumi.export "environment" environment)
+(pulumi.export "endpoint" (. app-stack alb-dns))
+(pulumi.export "replicas" replica-count)
+#+end_src
+
+*** Disaster Recovery Setup
+
+#+begin_src hy :tangle experiments/014-disaster-recovery-hy/__main__.hy
+;; Disaster recovery with multi-region
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Primary region provider
+(setv primary-provider
+  (aws.Provider "primary"
+    :region "us-west-2"))
+
+;; DR region provider  
+(setv dr-provider
+  (aws.Provider "dr"
+    :region "us-east-1"))
+
+;; Primary S3 bucket
+(setv primary-bucket
+  (aws.s3.BucketV2 "primary-data"
+    :versioning {:enabled True}
+    :opts (pulumi.ResourceOptions :provider primary-provider)))
+
+;; DR S3 bucket
+(setv dr-bucket
+  (aws.s3.BucketV2 "dr-data"
+    :versioning {:enabled True}
+    :opts (pulumi.ResourceOptions :provider dr-provider)))
+
+;; Cross-region replication role
+(setv replication-role
+  (aws.iam.Role "replication"
+    :assume-role-policy (pulumi.Output.json-stringify
+      {:Version "2012-10-17"
+       :Statement [{:Effect "Allow"
+                    :Principal {:Service "s3.amazonaws.com"}
+                    :Action "sts:AssumeRole"}]})))
+
+;; Replication policy
+(setv replication-policy
+  (aws.iam.RolePolicy "replication"
+    :role (. replication-role id)
+    :policy (pulumi.Output.json-stringify
+      {:Version "2012-10-17"
+       :Statement [
+         {:Effect "Allow"
+          :Action ["s3:GetReplicationConfiguration"
+                   "s3:ListBucket"]
+          :Resource [(. primary-bucket arn)]}
+         {:Effect "Allow"
+          :Action ["s3:GetObjectVersionForReplication"
+                   "s3:GetObjectVersionAcl"]
+          :Resource [(pulumi.Output.concat 
+                      (. primary-bucket arn) "/*")]}
+         {:Effect "Allow"
+          :Action ["s3:ReplicateObject"
+                   "s3:ReplicateDelete"]
+          :Resource [(pulumi.Output.concat
+                      (. dr-bucket arn) "/*")]}]})))
+
+;; Configure replication
+(setv replication-config
+  (aws.s3.BucketReplicationConfiguration "replication"
+    :role (. replication-role arn)
+    :bucket (. primary-bucket id)
+    :rules [{:id "replicate-all"
+             :status "Enabled"
+             :priority 1
+             :destination {:bucket (. dr-bucket arn)
+                          :storage-class "STANDARD_IA"}
+             :filter {}}]
+    :opts (pulumi.ResourceOptions 
+           :depends-on [replication-policy])))
+
+;; RDS with automated backups
+(setv primary-db
+  (aws.rds.Instance "primary"
+    :allocated-storage 100
+    :engine "postgres"
+    :engine-version "14"
+    :instance-class "db.t3.medium"
+    :backup-retention-period 30
+    :backup-window "03:00-04:00"
+    :maintenance-window "sun:04:00-sun:05:00"
+    :multi-az True
+    :skip-final-snapshot False
+    :final-snapshot-identifier "final-snapshot"
+    :opts (pulumi.ResourceOptions :provider primary-provider)))
+
+;; Outputs
+(pulumi.export "primary_bucket" (. primary-bucket bucket))
+(pulumi.export "dr_bucket" (. dr-bucket bucket))
+(pulumi.export "db_endpoint" (. primary-db endpoint))
+#+end_src
+
+* Executable Setup Scripts
+
+** Initialize All Experiments
+
+#+begin_src bash :dir . :results output
+#!/bin/bash
+set -e
+
+echo "Initializing all Pulumi experiments..."
+
+for dir in experiments/*/; do
+    if [ -f "$dir/Pulumi.yaml" ]; then
+        echo "Setting up: $dir"
+        cd "$dir"
+        
+        # Python/Hy projects
+        if grep -q "runtime: python" Pulumi.yaml; then
+            pulumi stack init dev --secrets-provider passphrase 2>/dev/null || true
+        fi
+        
+        # TypeScript projects  
+        if grep -q "runtime:" Pulumi.yaml | grep -q "nodejs"; then
+            npm install
+            pulumi stack init dev --secrets-provider passphrase 2>/dev/null || true
+        fi
+        
+        cd - > /dev/null
+    fi
+done
+
+echo "All experiments initialized!"
+#+end_src
+
+** LocalStack Testing
+
+#+begin_src bash :dir . :results output
+#!/bin/bash
+
+# Start LocalStack
+gmake localstack-start
+
+# Wait for LocalStack
+sleep 10
+
+# Configure AWS endpoint
+export AWS_ENDPOINT=http://localhost:4566
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_REGION=us-east-1
+
+# Test S3
+aws --endpoint-url=$AWS_ENDPOINT s3 mb s3://test-bucket
+aws --endpoint-url=$AWS_ENDPOINT s3 ls
+
+echo "LocalStack ready for testing!"
+#+end_src
+
+* Resources and References
+
+** Documentation
+- [[https://www.pulumi.com/docs/][Pulumi Documentation]]
+- [[https://www.pulumi.com/registry/][Pulumi Registry]]
+- [[https://docs.hylang.org/][Hy Documentation]]
+
+** Key Commands
+
+#+begin_src org
+| Command | Description |
+|---------|-------------|
+| pulumi new | Create new project |
+| pulumi up | Deploy infrastructure |
+| pulumi preview | Preview changes |
+| pulumi destroy | Tear down infrastructure |
+| pulumi stack | Manage stacks |
+| pulumi config | Manage configuration |
+#+end_src
+
+** Troubleshooting
+
+#+begin_src bash :results output
+# Check Pulumi version
+pulumi version
+
+# List stacks
+pulumi stack ls
+
+# View current stack
+pulumi stack
+
+# Show stack outputs
+pulumi stack output
+
+# View logs
+pulumi logs -f
+#+end_src
+
+* Notes
+
+This workshop provides hands-on experience with:
+- Pulumi fundamentals using Hy language
+- Multi-cloud resource management
+- Policy as code
+- Component abstractions
+- Production patterns
+
+All code blocks are executable in Emacs with org-babel.

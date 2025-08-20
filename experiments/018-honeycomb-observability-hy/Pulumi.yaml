@@ -1,0 +1,40 @@
+name: honeycomb-observability-hy
+runtime: python
+description: Comprehensive Honeycomb.io observability setup with Hy
+
+plugins:
+  providers:
+    - name: honeycombio
+      path: pulumi-honeycombio
+    - name: aws
+      path: pulumi-aws
+
+config:
+  # Honeycomb configuration
+  dataset:
+    type: string
+    description: Honeycomb dataset name
+    default: "workshop-dataset"
+  
+  app-name:
+    type: string
+    description: Application name for observability
+    default: "workshop"
+  
+  # Slack webhook for alerts
+  slack-webhook-url:
+    type: string
+    description: Slack webhook URL for alerts
+    secret: true
+  
+  # Feature toggles
+  enable-lambda:
+    type: boolean
+    description: Enable Lambda function instrumentation
+    default: false
+  
+  # Honeycomb API key
+  honeycombio:apikey:
+    type: string
+    description: Honeycomb API key
+    secret: true

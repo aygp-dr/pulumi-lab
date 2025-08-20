@@ -1,0 +1,63 @@
+name: project-config-hy
+runtime: python
+description: Project configuration and stack settings with Hy
+
+config:
+  # String configuration with validation
+  app:name:
+    type: string
+    description: Application name
+    default: "workshop-app"
+  
+  # Number configuration
+  app:instanceCount:
+    type: integer
+    description: Number of instances to deploy
+    default: 1
+    minimum: 1
+    maximum: 10
+  
+  # Boolean configuration
+  app:enableLogging:
+    type: boolean
+    description: Enable application logging
+    default: true
+  
+  # Object configuration
+  app:database:
+    type: object
+    description: Database configuration
+    properties:
+      engine:
+        type: string
+        enum: ["postgres", "mysql", "sqlite"]
+        default: "postgres"
+      version:
+        type: string
+        default: "14"
+      instanceClass:
+        type: string
+        default: "db.t3.micro"
+  
+  # Array configuration
+  app:allowedCidrs:
+    type: array
+    description: Allowed CIDR blocks
+    items:
+      type: string
+    default: ["10.0.0.0/8", "172.16.0.0/12"]
+  
+  # Secret configuration
+  app:dbPassword:
+    type: string
+    description: Database password
+    secret: true
+
+template:
+  config:
+    aws:region:
+      description: AWS region for deployment
+      default: us-west-2
+    aws:profile:
+      description: AWS profile to use
+      default: default
