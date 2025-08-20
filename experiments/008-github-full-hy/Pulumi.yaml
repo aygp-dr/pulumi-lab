@@ -1,0 +1,3 @@
+name: github-full-hy
+runtime: python
+description: Complete GitHub infrastructure management with Hy
