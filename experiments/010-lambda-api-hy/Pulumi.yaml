@@ -1,0 +1,3 @@
+name: lambda-api-hy
+runtime: python
+description: AWS Lambda functions with API Gateway integration using Hy
