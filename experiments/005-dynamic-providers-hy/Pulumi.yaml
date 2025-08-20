@@ -1,0 +1,3 @@
+name: dynamic-providers-hy
+runtime: python
+description: Custom dynamic providers with Hy

@@ -1,0 +1,3 @@
+[submodule "research/pulumi-core"]
+	path = research/pulumi-core
+	url = https://github.com/pulumi/pulumi.git

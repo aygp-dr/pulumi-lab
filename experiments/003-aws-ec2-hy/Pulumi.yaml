@@ -1,0 +1,3 @@
+name: aws-ec2-hy
+runtime: python
+description: AWS EC2 instance management with Hy

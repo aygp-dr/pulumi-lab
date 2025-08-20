@@ -1,0 +1,12 @@
+{
+  "name": "github-provider-lab",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/node": "^18"
+  },
+  "dependencies": {
+    "@pulumi/github": "^6.0.0",
+    "@pulumi/pulumi": "^3.0.0"
+  }
+}

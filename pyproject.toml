@@ -1,0 +1,41 @@
+[project]
+name = "pulumi-lab"
+version = "0.1.0"
+description = "Pulumi experiments with Hy language support"
+requires-python = ">=3.8"
+dependencies = [
+    "pulumi>=3.0.0",
+    "pulumi-github>=6.0.0",
+    "pulumi-aws>=6.0.0",
+    "hy>=0.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "ipython>=8.0.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.black]
+line-length = 120
+target-version = ["py38"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true

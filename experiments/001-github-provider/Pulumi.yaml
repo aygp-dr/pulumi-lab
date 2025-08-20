@@ -1,0 +1,6 @@
+name: github-provider-lab
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: GitHub provider experiments with Pulumi
