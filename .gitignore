@@ -56,3 +56,7 @@ temp/
 README.md
 **/README.md
 !research/**/README.md
+
+# Resources (downloaded by Makefile)
+resources/*.html
+resources/*.pdf
