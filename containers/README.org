@@ -1,0 +1,76 @@
+#+TITLE: Test Containers for Pulumi Lab
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+This directory contains test containers for various AWS services that can be deployed with Pulumi:
+- ECS/Fargate deployment testing
+- Lambda container images
+- Local development with mock services
+
+* Container Directory Structure
+
+#+begin_src text
+containers/
+├── nginx/           # Mock nginx web service
+├── fargate/         # ECS/Fargate test containers (future)
+├── lambda/          # Lambda container images (future)
+└── api/            # Mock API services (future)
+#+end_src
+
+* Available Containers
+
+** nginx - Mock Web Service
+Simple nginx container with styled HTML page for testing:
+- Minimal Alpine-based image (80.3MB)
+- Health check endpoint simulation
+- Mock API documentation page
+- Makefile for easy management
+
+Usage:
+#+begin_src bash
+cd containers/nginx
+make build
+make run     # Runs on port 8080
+make test    # Test the service
+make clean   # Remove container and image
+#+end_src
+
+** Future Containers
+
+*** fargate - ECS/Fargate Test App
+- Multi-tier application for Fargate testing
+- Includes ALB integration points
+- Service discovery testing
+
+*** lambda - Serverless Container
+- Lambda-compatible container images
+- Event handler examples
+- API Gateway integration
+
+*** api - Mock API Service  
+- RESTful API mock service
+- GraphQL endpoint testing
+- WebSocket support
+
+* Container Standards
+
+All containers should follow these standards:
+1. **Minimal size** - Use Alpine or distroless base images
+2. **Makefile** - Include targets: build, run, test, clean, size
+3. **Health checks** - Implement /health or similar endpoints
+4. **Documentation** - README with usage instructions
+5. **Pulumi integration** - Example Pulumi code for deployment
+
+* LocalStack Integration
+
+Containers can be tested with LocalStack for AWS services:
+#+begin_src bash
+# Start LocalStack
+docker run -d --name localstack -p 4566:4566 localstack/localstack
+
+# Deploy container to ECS with Pulumi
+cd experiments/XXX-ecs-fargate
+pulumi up
+#+end_src

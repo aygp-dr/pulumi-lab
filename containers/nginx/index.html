@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulumi Lab - Mock Service</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 Pulumi Lab Mock Service</h1>
+            <p class="subtitle">Infrastructure as Code Testing Environment</p>
+        </header>
+        
+        <main>
+            <section class="info-card">
+                <h2>Service Information</h2>
+                <ul>
+                    <li><strong>Type:</strong> Mock Web Service</li>
+                    <li><strong>Platform:</strong> nginx/alpine</li>
+                    <li><strong>Port:</strong> 8080</li>
+                    <li><strong>Environment:</strong> Development</li>
+                </ul>
+            </section>
+            
+            <section class="status-card">
+                <h2>Status</h2>
+                <div class="status-indicator">
+                    <span class="status-light"></span>
+                    <span>Service is running</span>
+                </div>
+                <p class="timestamp">Container started at: <span id="timestamp"></span></p>
+            </section>
+            
+            <section class="api-card">
+                <h2>Mock API Endpoints</h2>
+                <div class="endpoint">
+                    <code>GET /api/health</code>
+                    <span class="response">→ {"status": "healthy"}</span>
+                </div>
+                <div class="endpoint">
+                    <code>GET /api/info</code>
+                    <span class="response">→ {"service": "mock-nginx", "version": "1.0.0"}</span>
+                </div>
+                <div class="endpoint">
+                    <code>GET /api/data</code>
+                    <span class="response">→ {"items": [...], "count": 42}</span>
+                </div>
+            </section>
+            
+            <section class="tech-stack">
+                <h2>Technology Stack</h2>
+                <div class="tech-grid">
+                    <div class="tech-item">Pulumi</div>
+                    <div class="tech-item">Docker</div>
+                    <div class="tech-item">nginx</div>
+                    <div class="tech-item">LocalStack</div>
+                    <div class="tech-item">Hy</div>
+                    <div class="tech-item">Python</div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>Part of the Pulumi Lab experimental infrastructure project</p>
+            <p>Running on <code id="hostname">localhost</code></p>
+        </footer>
+    </div>
+    
+    <script>
+        // Set timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Set hostname
+        if (window.location.hostname) {
+            document.getElementById('hostname').textContent = window.location.hostname + ':' + window.location.port;
+        }
+        
+        // Animate status light
+        setInterval(() => {
+            const light = document.querySelector('.status-light');
+            light.style.opacity = light.style.opacity === '0.5' ? '1' : '0.5';
+        }, 1000);
+    </script>
+</body>
+</html>
