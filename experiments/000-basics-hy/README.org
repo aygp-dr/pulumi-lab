@@ -1,0 +1,115 @@
+#+TITLE: Pulumi Basics with Hy
+#+AUTHOR: Your Name
+#+DATE: 2025-08-20
+
+* Overview
+
+This project demonstrates basic Pulumi infrastructure as code using the Hy programming language.
+It creates AWS resources including an S3 bucket and exports relevant information.
+
+* Prerequisites
+
+- Python 3.8+
+- Pulumi CLI
+- AWS CLI configured with appropriate credentials
+- Hy programming language
+
+* Dependencies
+
+- =pulumi= - Infrastructure as Code SDK
+- =pulumi-aws= - AWS provider for Pulumi
+- =hy= - Lisp dialect for Python
+
+* Installation
+
+#+begin_src bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Or using the Makefile
+make install
+#+end_src
+
+* Configuration
+
+Configure your AWS credentials:
+
+#+begin_src bash
+aws configure
+#+end_src
+
+Select or create a Pulumi stack:
+
+#+begin_src bash
+pulumi stack select dev
+# or
+pulumi stack new dev
+#+end_src
+
+* Usage
+
+** Preview Changes
+
+#+begin_src bash
+make preview
+#+end_src
+
+** Deploy Infrastructure
+
+#+begin_src bash
+make up
+#+end_src
+
+** View Stack Outputs
+
+#+begin_src bash
+make outputs
+#+end_src
+
+** Destroy Infrastructure
+
+#+begin_src bash
+make destroy
+#+end_src
+
+** Run Tests
+
+#+begin_src bash
+make test
+#+end_src
+
+* Project Structure
+
+#+begin_example
+.
+├── __main__.hy        # Main Pulumi program
+├── Makefile           # Build automation
+├── README.org         # This file
+└── tests/             # Test files
+    └── test_stack.hy  # Stack tests
+#+end_example
+
+* Stack Outputs
+
+- =bucket_name= - The name of the created S3 bucket
+- =bucket_arn= - The ARN of the created S3 bucket
+
+* Testing
+
+Tests are written using Python's unittest framework and can be run with:
+
+#+begin_src bash
+make test
+#+end_src
+
+* Cleanup
+
+To remove all deployed resources:
+
+#+begin_src bash
+make destroy
+#+end_src
+
+* License
+
+MIT

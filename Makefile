@@ -75,3 +75,28 @@ README.md: README.org
 	touch .venv
 
 setup: .venv
+
+# Directory creation pattern rule
+%/:
+	mkdir -p $@
+
+# Documentation resources (non-phony targets)
+resources/hy-syntax.html: | resources/
+	curl -o $@ https://hylang.org/hy/doc/v1.0.0/syntax
+
+resources/hy-tutorial.html: | resources/
+	curl -o $@ https://hylang.org/hy/doc/v1.0.0/tutorial
+
+resources/pulumi-aws-docs.html: | resources/
+	curl -o $@ https://www.pulumi.com/registry/packages/aws/
+
+resources/pulumi-concepts.html: | resources/
+	curl -o $@ https://www.pulumi.com/docs/concepts/
+
+# Aggregate target for all documentation
+fetch-docs: resources/hy-syntax.html resources/hy-tutorial.html resources/pulumi-aws-docs.html resources/pulumi-concepts.html
+	@echo "Documentation fetched to resources/"
+
+# Clean documentation
+clean-docs:
+	rm -rf resources/
