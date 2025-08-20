@@ -1,0 +1,224 @@
+#+TITLE: Pulumi Lab Experiments Overview
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Experiments Catalog
+
+** Infrastructure Experiments (001-099)
+
+*** 001-github-provider
+Basic GitHub provider setup with TypeScript
+- Creates GitHub repositories
+- Configures branch protection
+- Sets up webhooks
+
+*** 002-github-teams-hy
+GitHub team management with Hy
+- Team creation and membership
+- Repository permissions
+- Organization settings
+
+*** 003-aws-ec2-hy  
+AWS EC2 instances with Hy
+- Instance provisioning
+- Security groups
+- Key pair management
+
+*** 004-github-org-setup-hy
+GitHub organization configuration
+- Organization policies
+- Default repository settings
+- Member permissions
+
+*** 005-github-repo-ts
+GitHub repository automation (TypeScript)
+- Repository templating
+- Issues and labels
+- Automated workflows
+
+*** 006-s3-buckets-hy ✅
+S3 bucket management with Hy
+- Versioning and encryption
+- Lifecycle policies
+- Public access controls
+- LocalStack tested
+
+*** 007-pulumi-teams-org-hy
+Pulumi teams and organization setup
+- Access controls
+- Stack permissions
+- Team collaboration
+
+*** 008-github-full-hy
+Complete GitHub infrastructure
+- Repositories, teams, and webhooks
+- Branch protection rules
+- Deployment keys
+
+*** 009-aws-vpc-hy
+AWS VPC and networking
+- Subnets and route tables
+- Internet/NAT gateways
+- Network ACLs
+
+*** 010-lambda-api-hy
+Lambda functions with API Gateway
+- Function deployment
+- API Gateway integration
+- Event triggers
+
+*** 011-policy-pack-hy
+Policy as Code implementation
+- Compliance rules
+- Resource validation
+- Cost controls
+
+*** 012-custom-provider-hy
+Custom Pulumi provider
+- Provider implementation
+- Resource definitions
+- Testing strategies
+
+*** 013-multi-stack-hy
+Multi-stack deployments
+- Stack references
+- Cross-stack dependencies
+- Environment promotion
+
+*** 014-disaster-recovery-hy
+Disaster recovery patterns
+- Backup strategies
+- Multi-region deployment
+- Failover automation
+
+** Advanced Patterns (020-029)
+
+*** 020-config-management-hy
+Configuration management
+- Secrets handling
+- Environment variables
+- Config validation
+
+*** 021-github-codespaces-hy
+GitHub Codespaces setup
+- Dev container configuration
+- Prebuilds
+- Extensions
+
+*** 022-github-actions-pulumi-hy
+GitHub Actions integration
+- CI/CD pipelines
+- Automated deployments
+- PR previews
+
+*** 023-secrets-manager-hy
+AWS Secrets Manager
+- Secret rotation
+- Access policies
+- Application integration
+
+*** 024-rds-postgres-hy
+RDS PostgreSQL setup
+- Database provisioning
+- Backup configuration
+- Read replicas
+
+*** 025-ecs-fargate-hy
+ECS Fargate deployment
+- Container orchestration
+- Service discovery
+- Load balancing
+
+*** 026-ssm-secrets-localstack-hy
+SSM Parameter Store with LocalStack
+- Parameter management
+- Hierarchical storage
+- Encryption
+
+*** 027-cross-region-replication-hy
+Cross-region replication
+- S3 replication
+- Database replication
+- Disaster recovery
+
+*** 028-cloudwatch-monitoring-hy
+CloudWatch monitoring
+- Metrics and alarms
+- Log aggregation
+- Dashboards
+
+*** 029-python-blocking-async-hy
+Python async patterns
+- Async/await in Pulumi
+- Concurrent deployments
+- Performance optimization
+
+** Automation & Testing (030-039)
+
+*** 030-cli-commands-reference
+CLI command reference
+- Custom commands
+- Automation scripts
+- Helper functions
+
+*** 031-automation-api-hy
+Pulumi Automation API
+- Programmatic deployments
+- Stack management
+- Event handling
+
+*** 032-policy-as-code-hy
+Advanced policy patterns
+- Custom validators
+- Remediation actions
+- Compliance reporting
+
+*** 033-testing-framework ✅
+Testing framework documentation
+- Unit testing strategies
+- Integration tests
+- CI/CD integration
+
+** Future Experiments (040+)
+
+*** 040-kubernetes-eks-hy (planned)
+EKS cluster deployment
+- Node groups
+- RBAC configuration
+- Ingress controllers
+
+*** 041-service-mesh-hy (planned)
+Service mesh implementation
+- Istio/Linkerd setup
+- Traffic management
+- Observability
+
+*** 042-gitops-hy (planned)
+GitOps workflow
+- Flux/ArgoCD integration
+- Automated syncing
+- Drift detection
+
+* Experiment Standards
+
+Each experiment should include:
+1. **README.org** - Documentation and usage
+2. **Pulumi.yaml** - Project configuration
+3. **__main__.hy** or **__main__.py** - Main program
+4. **Makefile** - Common operations
+5. **test_*.hy** - Test scripts
+
+* LocalStack Integration
+
+Experiments marked with 🧪 are tested with LocalStack:
+- 006-s3-buckets-hy ✅
+- 026-ssm-secrets-localstack-hy
+- More to come...
+
+* Notes
+
+- Experiments 001-014 focus on core infrastructure patterns
+- Experiments 020-029 explore advanced AWS features
+- Experiments 030-039 cover automation and testing
+- All Hy experiments use v1.0+ syntax
+- TypeScript experiments use modern ES modules
