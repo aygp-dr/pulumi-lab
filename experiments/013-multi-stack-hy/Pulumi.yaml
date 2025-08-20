@@ -1,0 +1,3 @@
+name: multi-stack-hy
+runtime: python
+description: Multi-stack deployment patterns with cross-stack references in Hy
