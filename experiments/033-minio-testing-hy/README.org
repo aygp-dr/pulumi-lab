@@ -1,0 +1,80 @@
+#+TITLE: Minio S3 Testing on FreeBSD
+#+DESCRIPTION: Using Minio as LocalStack alternative for S3 operations
+
+* Overview
+
+This experiment demonstrates using Minio as an S3-compatible storage solution on FreeBSD, where Docker/LocalStack cannot run natively.
+
+* Prerequisites
+
+#+begin_src bash
+# Install Minio
+sudo pkg install minio minio-client
+
+# Install AWS CLI
+pip3 install --user awscli
+#+end_src
+
+* Setup
+
+** Start Minio
+
+#+begin_src bash
+# Using the helper script
+./scripts/start-minio.sh
+
+# Or using gmake
+gmake minio-start
+#+end_src
+
+** Configure Environment
+
+#+begin_src bash
+# Set environment variables
+eval $(gmake minio-env)
+
+# Or manually
+export AWS_ENDPOINT=http://localhost:9000
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_REGION=us-east-1
+#+end_src
+
+* Running the Experiment
+
+#+begin_src bash
+# Initialize stack
+pulumi stack init minio-test --secrets-provider passphrase
+
+# Deploy to Minio
+pulumi up
+
+# Verify with AWS CLI
+aws --endpoint-url=$AWS_ENDPOINT s3 ls
+aws --endpoint-url=$AWS_ENDPOINT s3 ls s3://pulumi-minio-test/
+#+end_src
+
+* What This Tests
+
+- S3 bucket creation via Pulumi
+- Bucket versioning configuration
+- Object upload/management
+- Provider configuration for non-AWS endpoints
+- FreeBSD compatibility without Docker
+
+* Cleanup
+
+#+begin_src bash
+# Destroy resources
+pulumi destroy
+
+# Stop Minio
+gmake minio-stop
+#+end_src
+
+* Notes
+
+- Minio provides only S3 API compatibility
+- For other AWS services, use actual AWS or remote LocalStack
+- Minio is production-ready and can be used for real workloads
+- Data persists in ~/minio-data directory

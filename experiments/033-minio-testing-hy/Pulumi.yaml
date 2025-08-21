@@ -1,0 +1,3 @@
+name: minio-testing
+runtime: python
+description: Test Minio S3-compatible storage on FreeBSD as LocalStack alternative

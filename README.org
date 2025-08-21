@@ -25,7 +25,7 @@ This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Li
 
 ** FreeBSD Compatibility Note
 
-*Important:* Pulumi doesn't officially support FreeBSD and is not available in ports/pkg. This project runs Pulumi 3.145.0 via FreeBSD's Linux compatibility layer. Docker daemon doesn't run natively on FreeBSD, so we use Minio as a LocalStack alternative for S3 emulation. See [[file:docs/FREEBSD_PULUMI_SETUP.md][FreeBSD Setup Guide]] and [[file:docs/MINIO_ALTERNATIVE.md][Minio Setup]] for details.
+*Important:* Pulumi doesn't officially support FreeBSD and is not available in ports/pkg. This project runs Pulumi 3.145.0 via FreeBSD's Linux compatibility layer. Docker daemon doesn't run natively on FreeBSD, so we use Minio as a LocalStack alternative for S3 emulation. See [[file:docs/FREEBSD.md][FreeBSD Guide]] for complete setup.
 
 #+begin_src bash :dir . :results verbatim
 # Quick FreeBSD setup (requires Linux compatibility layer)
