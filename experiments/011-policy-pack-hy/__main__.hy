@@ -1,7 +1,7 @@
 ;; Policy enforcement in Hy
 (import pulumi)
-(import [pulumi-aws :as aws])
-(import [pulumi.policy :as policy])
+(import pulumi_aws :as aws)
+(import pulumi.policy :as policy)
 
 ;; Define policy pack
 (defclass SecurityPolicyPack [policy.PolicyPack]
