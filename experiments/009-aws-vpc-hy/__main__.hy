@@ -1,6 +1,6 @@
 ;; Complete VPC setup in Hy
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 
 ;; Create VPC
 (setv main-vpc
