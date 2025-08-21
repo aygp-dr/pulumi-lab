@@ -1,0 +1,284 @@
+# Using Minio Instead of LocalStack on FreeBSD
+
+Since Docker doesn't run natively on FreeBSD, we can use **Minio** as an alternative for S3 testing. Minio is S3-compatible and runs natively on FreeBSD.
+
+## Installation
+
+```bash
+# Install Minio server
+sudo pkg install minio
+
+# Install Minio client (optional, for management)
+sudo pkg install minio-client
+
+# Install Python Minio library for Pulumi
+pip3 install --user minio
+```
+
+## Starting Minio
+
+### Basic Setup
+
+```bash
+# Create data directory
+mkdir -p ~/minio-data
+
+# Start Minio server
+minio server ~/minio-data
+
+# Or run in background
+minio server ~/minio-data &
+
+# Default credentials:
+# Access Key: minioadmin
+# Secret Key: minioadmin
+# Endpoint: http://localhost:9000
+# Console: http://localhost:9001
+```
+
+### Custom Configuration
+
+```bash
+# Set custom credentials
+export MINIO_ROOT_USER=myaccesskey
+export MINIO_ROOT_PASSWORD=mysecretkey
+
+# Start with custom port
+minio server --address ":9000" ~/minio-data
+```
+
+### As a Service
+
+Create `/usr/local/etc/rc.d/minio`:
+
+```sh
+#!/bin/sh
+
+# PROVIDE: minio
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="minio"
+rcvar=minio_enable
+command="/usr/local/bin/minio"
+command_args="server /var/db/minio"
+pidfile="/var/run/${name}.pid"
+
+load_rc_config $name
+: ${minio_enable:="NO"}
+: ${minio_user:="minio"}
+: ${minio_group:="minio"}
+
+run_rc_command "$1"
+```
+
+Then:
+```bash
+sudo chmod +x /usr/local/etc/rc.d/minio
+sudo sysrc minio_enable=YES
+sudo service minio start
+```
+
+## Configuring AWS CLI for Minio
+
+```bash
+# Set environment variables
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_ENDPOINT=http://localhost:9000
+export AWS_REGION=us-east-1
+
+# Or create a profile
+aws configure --profile minio
+# Enter:
+# AWS Access Key ID: minioadmin
+# AWS Secret Access Key: minioadmin
+# Default region name: us-east-1
+# Default output format: json
+
+# Use with endpoint URL
+aws --endpoint-url=http://localhost:9000 s3 ls
+aws --endpoint-url=http://localhost:9000 s3 mb s3://test-bucket
+```
+
+## Configuring Pulumi for Minio
+
+### Method 1: Environment Variables
+
+```bash
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_REGION=us-east-1
+
+# In your Pulumi program, configure the endpoint
+pulumi config set aws:endpoints:s3 http://localhost:9000
+pulumi config set aws:s3ForcePathStyle true
+pulumi config set aws:skipCredentialsValidation true
+pulumi config set aws:skipRequestingAccountId true
+```
+
+### Method 2: In Pulumi Code (Python/Hy)
+
+```python
+import pulumi
+import pulumi_aws as aws
+
+# Configure AWS provider for Minio
+provider = aws.Provider("minio",
+    endpoints=[aws.ProviderEndpointArgs(
+        s3="http://localhost:9000",
+    )],
+    s3_use_path_style=True,
+    skip_credentials_validation=True,
+    skip_requesting_account_id=True,
+    access_key="minioadmin",
+    secret_key="minioadmin",
+    region="us-east-1"
+)
+
+# Create bucket using Minio
+bucket = aws.s3.BucketV2("my-bucket",
+    opts=pulumi.ResourceOptions(provider=provider)
+)
+```
+
+### In Hy:
+
+```hy
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Configure provider for Minio
+(setv minio-provider
+  (aws.Provider "minio"
+    :endpoints [(aws.ProviderEndpointArgs :s3 "http://localhost:9000")]
+    :s3-use-path-style True
+    :skip-credentials-validation True
+    :skip-requesting-account-id True
+    :access-key "minioadmin"
+    :secret-key "minioadmin"
+    :region "us-east-1"))
+
+;; Create bucket
+(setv bucket
+  (aws.s3.BucketV2 "my-bucket"
+    :opts (pulumi.ResourceOptions :provider minio-provider)))
+```
+
+## Testing Minio
+
+### Using AWS CLI
+
+```bash
+# List buckets
+aws --endpoint-url=http://localhost:9000 s3 ls
+
+# Create bucket
+aws --endpoint-url=http://localhost:9000 s3 mb s3://test-bucket
+
+# Upload file
+echo "Hello Minio" > test.txt
+aws --endpoint-url=http://localhost:9000 s3 cp test.txt s3://test-bucket/
+
+# List objects
+aws --endpoint-url=http://localhost:9000 s3 ls s3://test-bucket/
+
+# Download file
+aws --endpoint-url=http://localhost:9000 s3 cp s3://test-bucket/test.txt downloaded.txt
+```
+
+### Using Minio Client
+
+```bash
+# Configure minio client
+mc alias set local http://localhost:9000 minioadmin minioadmin
+
+# List buckets
+mc ls local
+
+# Create bucket
+mc mb local/test-bucket
+
+# Copy file
+mc cp test.txt local/test-bucket/
+
+# List files
+mc ls local/test-bucket/
+```
+
+## Minio vs LocalStack Comparison
+
+| Feature | Minio | LocalStack |
+|---------|-------|------------|
+| S3 API | ✅ Full support | ✅ Full support |
+| Other AWS Services | ❌ S3 only | ✅ Many services |
+| Native FreeBSD | ✅ Yes | ❌ Needs Docker |
+| Performance | ✅ Native speed | ⚠️ Docker overhead |
+| Setup Complexity | ✅ Simple | ❌ Complex on FreeBSD |
+| Production Ready | ✅ Yes | ❌ Dev only |
+
+## Example: Pulumi S3 with Minio
+
+```bash
+cd experiments/006-s3-buckets-hy
+
+# Configure for Minio
+pulumi config set aws:endpoints:s3 http://localhost:9000
+pulumi config set aws:s3ForcePathStyle true
+pulumi config set aws:skipCredentialsValidation true
+pulumi config set aws:skipRequestingAccountId true
+
+# Set credentials
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+
+# Run Pulumi
+pulumi up
+
+# Verify with AWS CLI
+aws --endpoint-url=http://localhost:9000 s3 ls
+```
+
+## Makefile Integration
+
+Add to your Makefile:
+
+```makefile
+.PHONY: minio-start minio-stop minio-test
+
+minio-start:
+	@echo "Starting Minio S3-compatible storage..."
+	@mkdir -p ~/minio-data
+	@minio server ~/minio-data &
+	@echo "Minio started at http://localhost:9000"
+	@echo "Console at http://localhost:9001"
+	@echo "Default credentials: minioadmin/minioadmin"
+
+minio-stop:
+	@pkill minio || true
+	@echo "Minio stopped"
+
+minio-env:
+	@echo "export AWS_ENDPOINT=http://localhost:9000"
+	@echo "export AWS_ACCESS_KEY_ID=minioadmin"
+	@echo "export AWS_SECRET_ACCESS_KEY=minioadmin"
+	@echo "export AWS_REGION=us-east-1"
+
+minio-test:
+	@aws --endpoint-url=http://localhost:9000 s3 ls || echo "Minio not running or not configured"
+```
+
+## Summary
+
+- **Minio** provides S3-compatible storage that runs natively on FreeBSD
+- Perfect alternative to LocalStack for S3-specific testing
+- Production-ready and performant
+- Simple setup compared to Docker on FreeBSD
+- Limitation: Only provides S3 API, not other AWS services
+
+For services beyond S3, consider:
+- Using actual AWS with free tier
+- Setting up a Linux VM with full LocalStack
+- Using service-specific alternatives (PostgreSQL for RDS, etc.)
