@@ -9,10 +9,10 @@ It creates AWS resources including an S3 bucket and exports relevant information
 
 * Prerequisites
 
-- Python 3.8+
-- Pulumi CLI
-- AWS CLI configured with appropriate credentials
-- Hy programming language
+- Python 3.11+
+- Pulumi CLI 3.145.0+ (via Linux compatibility on FreeBSD)
+- AWS credentials or Minio for S3 testing
+- Hy 1.0.0+
 
 * Dependencies
 
