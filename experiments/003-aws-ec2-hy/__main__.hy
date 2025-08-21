@@ -1,7 +1,7 @@
 ;; AWS EC2 instance with security group in Hy
 
 (import pulumi)
-(import pulumi-aws :as aws)
+(import pulumi_aws :as aws)
 
 ;; Create security group for web access
 (setv web-sg 

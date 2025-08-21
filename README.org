@@ -136,7 +136,7 @@ pulumi login --local | sed -e 's#FCP.*local#<redacted>#'
 #+begin_src hy :tangle experiments/000-basics-hy/__main__.hy
 ;; Basic Pulumi program in Hy
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 
 ;; Configuration
 (setv config (pulumi.Config))
@@ -172,7 +172,7 @@ pulumi login --local | sed -e 's#FCP.*local#<redacted>#'
 #+begin_src hy :tangle experiments/008-github-full-hy/__main__.hy
 ;; Complete GitHub setup in Hy
 (import pulumi)
-(import [pulumi-github :as github])
+(import pulumi_github :as github)
 
 ;; Configuration
 (setv config (pulumi.Config))
@@ -236,7 +236,7 @@ pulumi preview
 #+begin_src hy :tangle experiments/009-aws-vpc-hy/__main__.hy
 ;; Complete VPC setup in Hy
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 
 ;; Create VPC
 (setv main-vpc
@@ -305,7 +305,7 @@ pulumi preview
 #+begin_src hy :tangle experiments/010-lambda-api-hy/__main__.hy
 ;; Serverless API with Lambda and API Gateway
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 (import json)
 
 ;; Lambda execution role
@@ -403,8 +403,8 @@ def handler(event, context):
 #+begin_src hy :tangle experiments/011-policy-pack-hy/__main__.hy
 ;; Policy enforcement in Hy
 (import pulumi)
-(import [pulumi-aws :as aws])
-(import [pulumi.policy :as policy])
+(import pulumi_aws :as aws)
+(import pulumi.policy :as policy)
 
 ;; Define policy pack
 (defclass SecurityPolicyPack [policy.PolicyPack]
@@ -453,7 +453,7 @@ def handler(event, context):
 #+begin_src hy :tangle experiments/012-custom-provider-hy/__main__.hy
 ;; Custom provider for external services
 (import pulumi)
-(import [pulumi.dynamic :as dynamic])
+(import pulumi.dynamic :as dynamic)
 (import requests)
 (import time)
 
@@ -532,8 +532,8 @@ def handler(event, context):
 #+begin_src hy :tangle experiments/013-multi-stack-hy/__main__.hy
 ;; Multi-stack application deployment
 (import pulumi)
-(import [pulumi-aws :as aws])
-(import [pulumi-kubernetes :as k8s])
+(import pulumi_aws :as aws)
+(import pulumi_kubernetes :as k8s)
 
 (setv config (pulumi.Config))
 (setv stack (pulumi.get-stack))
@@ -626,7 +626,7 @@ def handler(event, context):
 #+begin_src hy :tangle experiments/014-disaster-recovery-hy/__main__.hy
 ;; Disaster recovery with multi-region
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 
 ;; Primary region provider
 (setv primary-provider

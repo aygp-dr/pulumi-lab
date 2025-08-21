@@ -1,7 +1,7 @@
 ;; Stack References - sharing outputs between stacks in Hy
 
 (import pulumi)
-(import pulumi-aws :as aws)
+(import pulumi_aws :as aws)
 
 (setv config (pulumi.Config))
 (setv stack (pulumi.get-stack))
