@@ -4,61 +4,29 @@
 [project]
 name = "pulumi-lab"
 version = "0.1.0"
-description = "🧪 EXPERIMENTAL Pulumi Infrastructure as Code with Hy"
+description = "Experimental Pulumi Infrastructure as Code with Hy"
 requires-python = ">=3.11"
 dependencies = [
-    "pulumi>=3.0.0",
-    "pulumi-github>=6.0.0",
-    "pulumi-aws>=6.0.0",
     "hy>=1.0.0",
-    "boto3>=1.40.14",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0", 
-    "mypy>=1.0.0",
-    "ruff>=0.1.0",
-    "ipython>=8.0.0",
+pulumi = [
+    "pulumi>=3.0.0",
+    "pulumi-github>=6.0.0",
+    "pulumi-aws>=6.0.0",
 ]
-automation = [
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
-    "click>=8.0.0",
-    "requests>=2.30.0",
-    "pydantic>=2.0.0",
-]
-policy = [
-    "pulumi-policy>=1.0.0",
+aws = [
+    "boto3>=1.40.14",
+    "awscli>=1.40.0",
 ]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = []
-py-modules = []
 
 [tool.setuptools.package-data]
 "*" = ["*.hy", "*.org", "*.yaml", "*.yml"]
-
-[tool.uv]
-package = false
-
-[tool.ruff]
-line-length = 88
-target-version = "py311"
-select = ["E", "F", "W", "I", "N", "B", "C"]
-ignore = ["E501", "B008"]
-
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
