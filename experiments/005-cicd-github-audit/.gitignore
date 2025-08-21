@@ -1,0 +1,14 @@
+# Pulumi
+Pulumi.*.yaml
+.pulumi/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Audit reports
+audit_report.*
+
+# Environment
+.env

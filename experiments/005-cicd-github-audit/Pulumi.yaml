@@ -1,0 +1,6 @@
+name: github-audit-ci
+description: CI/CD pipeline for GitHub repository auditing
+runtime:
+  name: python
+  options:
+    virtualenv: venv
