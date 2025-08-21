@@ -188,32 +188,30 @@ M-x pulumi-lab-ensure-packages
 ** Verification
 
 *** 1. Check All Dependencies
+
+Create dependency checker script:
+
+#+begin_src hy :tangle scripts/check_deps.hy
+(import sys)
+(import importlib)
+
+(setv deps ["pulumi" "pulumi_aws" "pulumi_github" "hy" "boto3"])
+
+(for [dep deps]
+  (try
+    (setv mod (importlib.import_module (.replace dep "-" "_")))
+    (print f"✅ {dep}: installed")
+    (except [ImportError]
+      (print f"❌ {dep}: missing")
+      (sys.exit 1))))
+
+(print "\n✅ All dependencies installed!")
+#+end_src
+
+Run the checker:
+
 #+begin_src bash
-# Run verification script
-cat > check_deps.py << 'EOF'
-import sys
-import importlib
-
-deps = [
-    "pulumi",
-    "pulumi_aws",
-    "pulumi_github", 
-    "hy",
-    "boto3",
-]
-
-for dep in deps:
-    try:
-        mod = importlib.import_module(dep.replace("-", "_"))
-        print(f"✅ {dep}: installed")
-    except ImportError:
-        print(f"❌ {dep}: missing")
-        sys.exit(1)
-
-print("\n✅ All dependencies installed!")
-EOF
-
-python check_deps.py
+hy scripts/check_deps.hy
 #+end_src
 
 *** 2. Test Pulumi Setup
