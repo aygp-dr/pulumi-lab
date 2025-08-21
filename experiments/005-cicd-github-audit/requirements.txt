@@ -1,0 +1,9 @@
+# Core dependencies for CI/CD audit
+requests>=2.31.0
+pulumi>=3.0.0
+pulumi-github>=6.0.0
+
+# For local development (optional)
+pytest>=7.0.0
+black>=23.0.0
+pylint>=2.0.0

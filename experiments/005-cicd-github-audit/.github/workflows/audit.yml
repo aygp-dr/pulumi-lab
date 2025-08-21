@@ -1,0 +1,221 @@
+name: GitHub Repository Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'experiments/005-cicd-github-audit/**'
+      - '.github/workflows/audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'experiments/005-cicd-github-audit/**'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Audit target (user or org name)'
+        required: false
+        default: 'aygp-dr'
+      type:
+        description: 'Target type'
+        required: true
+        default: 'user'
+        type: choice
+        options:
+          - user
+          - org
+  schedule:
+    # Run weekly audit on Mondays at 9am UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  verify-environment:
+    name: Verify CI Environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Verify Pulumi availability
+        run: |
+          echo "=== Checking Pulumi CLI ===" 
+          curl -fsSL https://get.pulumi.com | sh
+          export PATH=$HOME/.pulumi/bin:$PATH
+          pulumi version
+          echo "✓ Pulumi is available"
+      
+      - name: Check GitHub token availability
+        run: |
+          echo "=== Checking GitHub tokens ===="
+          if [ -n "${{ secrets.GITHUB_TOKEN }}" ]; then
+            echo "✓ GITHUB_TOKEN is available"
+          fi
+          if [ -n "${{ secrets.GH_PAT }}" ]; then
+            echo "✓ GH_PAT custom token is available"
+          fi
+          # Prefer custom PAT if available, otherwise use GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_PAT }}" ]; then
+            echo "AUDIT_TOKEN=${{ secrets.GH_PAT }}" >> $GITHUB_ENV
+            echo "Using custom PAT for audit"
+          else
+            echo "AUDIT_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN for audit"
+          fi
+      
+      - name: Install Python dependencies
+        working-directory: experiments/005-cicd-github-audit
+        run: |
+          echo "=== Installing dependencies ===="
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip list
+          echo "✓ Dependencies installed"
+
+  audit-repositories:
+    name: Audit GitHub Repositories
+    runs-on: ubuntu-latest
+    needs: verify-environment
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Pulumi
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        working-directory: experiments/005-cicd-github-audit
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run repository audit
+        id: audit
+        working-directory: experiments/005-cicd-github-audit
+        run: |
+          # Determine target from workflow inputs or defaults
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET="${{ github.event.inputs.target }}"
+            TYPE="${{ github.event.inputs.type }}"
+          else
+            TARGET="${{ github.repository_owner }}"
+            TYPE="user"
+          fi
+          
+          echo "Auditing $TYPE: $TARGET"
+          
+          # Run audit and save outputs
+          python audit_repos.py --$TYPE $TARGET --format json > audit_report.json
+          python audit_repos.py --$TYPE $TARGET --format markdown > audit_report.md
+          python audit_repos.py --$TYPE $TARGET --format csv > audit_report.csv
+          
+          # Set output for PR comment
+          {
+            echo 'report<<EOF'
+            cat audit_report.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+          
+          # Show summary
+          echo "=== Audit Summary ===="
+          python -c "
+          import json
+          with open('audit_report.json') as f:
+              data = json.load(f)
+          print(f\"Total repos: {data['summary']['total_repos']}\")
+          print(f\"Issues found: {data['summary']['repos_with_issues']}\")
+          "
+      
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: audit-reports
+          path: |
+            experiments/005-cicd-github-audit/audit_report.json
+            experiments/005-cicd-github-audit/audit_report.md
+            experiments/005-cicd-github-audit/audit_report.csv
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = `${{ steps.audit.outputs.report }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 📊 Repository Audit Report\n\n${report}`
+            });
+      
+      - name: Create issue for problems
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('experiments/005-cicd-github-audit/audit_report.json', 'utf8'));
+            
+            if (report.summary.repos_with_issues > 0) {
+              const issueBody = `## Weekly Repository Audit
+              
+              Found ${report.summary.repos_with_issues} repositories with issues:
+              
+              - **No topics**: ${report.summary.no_topics}
+              - **Too many topics**: ${report.summary.too_many_topics}
+              - **No description**: ${report.summary.no_description}
+              
+              See the [full report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+              `;
+              
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Repository Audit: ${report.summary.repos_with_issues} issues found`,
+                body: issueBody,
+                labels: ['audit', 'maintenance']
+              });
+            }
+
+  test-pulumi-integration:
+    name: Test Pulumi Integration
+    runs-on: ubuntu-latest
+    needs: verify-environment
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Pulumi
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+      
+      - name: Install Pulumi Python SDK
+        run: |
+          pip install pulumi pulumi-github
+      
+      - name: Test Pulumi GitHub provider
+        working-directory: experiments/005-cicd-github-audit
+        run: |
+          echo "=== Testing Pulumi GitHub Provider ===="
+          python test_pulumi.py
+          echo "✓ Pulumi GitHub provider works"

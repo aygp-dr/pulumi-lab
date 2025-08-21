@@ -1,0 +1,76 @@
+#+TITLE: CI/CD GitHub Repository Audit with Pulumi
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+GitHub Actions CI/CD pipeline that:
+1. Verifies Pulumi is available
+2. Uses GitHub token from Actions (GITHUB_TOKEN or custom PAT)
+3. Installs Python dependencies correctly
+4. Audits repositories for:
+   - Missing topics
+   - More than 5 topics (over-tagged)
+   - Missing descriptions
+5. Generates audit reports for user and org repos
+
+* CI/CD Pipeline Features
+
+** Environment Setup
+- Pulumi CLI installation verification
+- Python dependency management
+- GitHub token handling (Actions token vs PAT)
+
+** Repository Audit Checks
+- No topics assigned
+- Excessive topics (>5)
+- Missing descriptions
+- Visibility status
+- Last update time
+
+** Report Generation
+- JSON format for programmatic use
+- Markdown format for PR comments
+- CSV export for spreadsheets
+
+* Local Testing
+
+#+begin_src bash
+# Test the audit script locally
+export GITHUB_TOKEN=ghp_...
+python audit_repos.py --user aygp-dr
+
+# Test with organization
+python audit_repos.py --org aygp-dr
+
+# Generate different report formats
+python audit_repos.py --user aygp-dr --format json
+python audit_repos.py --user aygp-dr --format markdown
+python audit_repos.py --user aygp-dr --format csv
+#+end_src
+
+* GitHub Actions Integration
+
+The workflow runs on:
+- Push to main branch
+- Pull requests
+- Manual dispatch
+- Scheduled (weekly audit)
+
+* Output Examples
+
+** Repositories with Issues
+
+| Repository | Issue | Details |
+|------------|-------|---------|
+| user/repo1 | No topics | Repository has no topics assigned |
+| user/repo2 | Too many topics | Has 7 topics (max recommended: 5) |
+| user/repo3 | No description | Repository lacks description |
+
+** Summary Statistics
+
+- Total repositories: 42
+- Repositories with issues: 12
+- No topics: 5
+- Too many topics: 3
+- No description: 4
