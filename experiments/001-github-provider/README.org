@@ -1,0 +1,44 @@
+#+TITLE: GitHub Provider with TypeScript
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+Basic GitHub provider example using TypeScript to create and manage GitHub repositories.
+
+* Prerequisites
+
+- Node.js 22.14.0+
+- Pulumi CLI 3.145.0+
+- GitHub Personal Access Token
+- npm or yarn
+
+* Setup
+
+#+begin_src bash
+# Install dependencies
+npm install
+
+# Configure GitHub token
+pulumi config set github:token YOUR_TOKEN --secret
+
+# Select stack
+pulumi stack select dev
+#+end_src
+
+* Usage
+
+#+begin_src bash
+# Preview changes
+pulumi preview
+
+# Deploy
+pulumi up
+
+# Destroy
+pulumi destroy
+#+end_src
+
+* Note
+
+This is the only TypeScript experiment in the repository. All other experiments use Hy (Lisp for Python).
