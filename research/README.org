@@ -1,0 +1,40 @@
+#+TITLE: Pulumi Provider Research
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+This directory contains Git submodules of Pulumi providers for deep-dive exploration and understanding of SDK internals.
+
+* Submodules
+
+** pulumi-github
+
+GitHub provider for creating and managing GitHub resources.
+
+- Source: [[https://github.com/pulumi/pulumi-github][pulumi/pulumi-github]]
+- Registry: [[https://www.pulumi.com/registry/packages/github/][Pulumi Registry - GitHub]]
+- PyPI: [[https://pypi.org/project/pulumi-github/][pulumi-github on PyPI]]
+
+Key areas to explore:
+- ~provider/~ - Provider implementation
+- ~sdk/python/~ - Python SDK bindings
+- ~examples/~ - Usage examples
+- ~schema.json~ - Resource definitions
+
+* Usage
+
+#+begin_src bash
+# Initialize submodules after cloning
+git submodule update --init --recursive
+
+# Update to latest versions
+git submodule update --remote --merge
+
+# Explore the SDK
+cd pulumi-github/sdk/python
+#+end_src
+
+* Notes
+
+These submodules are for reference and learning. The actual provider packages are installed via pip/npm in each experiment.
