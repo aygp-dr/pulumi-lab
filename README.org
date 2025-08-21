@@ -5,22 +5,33 @@
 #+PROPERTY: header-args :results output :exports both :mkdirp yes
 
 [[https://img.shields.io/badge/status-experimental-orange.svg]]
-[[https://img.shields.io/badge/python-3.11-blue.svg]]
+[[https://img.shields.io/badge/python-3.11.11-blue.svg]]
 [[https://img.shields.io/badge/hy-1.0.0-purple.svg]]
-[[https://img.shields.io/badge/pulumi-latest-blueviolet.svg]]
-[[https://img.shields.io/badge/platform-FreeBSD-red.svg]]
+[[https://img.shields.io/badge/pulumi-3.145.0-blueviolet.svg]]
+[[https://img.shields.io/badge/platform-FreeBSD_14.3-red.svg]]
 [[https://img.shields.io/badge/localstack-supported-green.svg]]
 
 * Overview
 
 This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Lisp for Python) on FreeBSD. The project demonstrates advanced IaC patterns, policy as code, and automation API capabilities.
 
-*Current Environment:*
+*Tested Environment:*
+- System: ~FreeBSD nexushive 14.3-RELEASE releng/14.3-n271432-8c9ce319fef7 GENERIC amd64~
 - Python 3.11.11
 - Hy 1.0.0  
-- Pulumi latest
-- FreeBSD 14.3-RELEASE
-- LocalStack for local development
+- Pulumi 3.145.0 (via Linux compatibility layer)
+- Docker 18.09.5_26
+- LocalStack for AWS emulation
+
+** FreeBSD Compatibility Note
+
+*Important:* Pulumi doesn't officially support FreeBSD and is not available in ports/pkg. This project runs Pulumi 3.145.0 via FreeBSD's Linux compatibility layer. See [[file:docs/FREEBSD_PULUMI_SETUP.md][FreeBSD Setup Guide]] for installation instructions.
+
+#+begin_src bash :dir . :results verbatim
+# Quick FreeBSD setup (requires Linux compatibility layer)
+gmake freebsd-setup
+gmake freebsd-test
+#+end_src
 
 ** Quick Start
 
@@ -30,13 +41,13 @@ Check if Pulumi is installed:
 which pulumi && pulumi version || echo "Pulumi not installed"
 #+end_src
 
-Install Pulumi if needed:
+Install Pulumi:
 
 #+begin_src bash :dir . :results verbatim
-# Install Pulumi (only if not installed)
-if ! command -v pulumi &> /dev/null; then
-    curl -fsSL https://get.pulumi.com | sh
-fi
+# For Linux/macOS:
+curl -fsSL https://get.pulumi.com | sh
+
+# For FreeBSD: Use gmake freebsd-setup (see above)
 #+end_src
 
 Set up the environment:
