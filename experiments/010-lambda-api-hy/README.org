@@ -1,0 +1,39 @@
+#+TITLE: Lambda API Gateway with Hy
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+Creates a serverless API using AWS Lambda and API Gateway, written in Hy.
+
+* Architecture
+
+- API Gateway REST API
+- Lambda function handler
+- CloudWatch logging
+- IAM roles and policies
+
+* Prerequisites
+
+- Pulumi CLI 3.145.0+
+- Python 3.11+ with Hy 1.0.0+
+- AWS credentials or LocalStack
+
+* Testing Locally
+
+#+begin_src bash
+# With LocalStack
+export AWS_ENDPOINT_URL=http://localhost:4566
+
+# Deploy
+pulumi up
+
+# Test endpoint
+curl $(pulumi stack output api_url)
+#+end_src
+
+* Cross-Platform Notes
+
+- Works on FreeBSD with Pulumi Linux compatibility
+- LocalStack requires Docker (use AWS free tier as alternative)
+- Lambda deployment packages work across platforms
