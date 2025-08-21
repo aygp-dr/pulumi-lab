@@ -20,24 +20,34 @@ setup-hy:
 localstack-start:
 	@echo "Starting LocalStack for AWS service emulation..."
 	@if command -v docker >/dev/null 2>&1; then \
+		if ! docker ps >/dev/null 2>&1; then \
+			echo "Docker daemon not running. Start with: sudo service docker start"; \
+			exit 1; \
+		fi; \
 		docker run -d \
 			--name localstack \
 			-p 4566:4566 \
 			-p 4571:4571 \
-			-e SERVICES=s3,ec2,iam,lambda \
+			-e SERVICES=s3,ec2,iam,lambda,dynamodb,sqs,sns \
 			-e DEBUG=1 \
 			-e DATA_DIR=/tmp/localstack/data \
 			-v /tmp/localstack:/tmp/localstack \
-			-v /var/run/docker.sock:/var/run/docker.sock \
 			localstack/localstack:latest; \
 		echo "LocalStack started on port 4566"; \
+		echo "Waiting for LocalStack to be ready..."; \
+		sleep 5; \
 		echo "Configure Pulumi to use LocalStack:"; \
 		echo "  export AWS_ENDPOINT=http://localhost:4566"; \
 		echo "  export AWS_ACCESS_KEY_ID=test"; \
 		echo "  export AWS_SECRET_ACCESS_KEY=test"; \
+		echo "  export AWS_REGION=us-east-1"; \
+		echo ""; \
+		echo "Or use: gmake localstack-env"; \
 	else \
 		echo "Docker not found. LocalStack requires Docker."; \
-		echo "Install Docker or use Podman with appropriate configuration."; \
+		echo "Install with: sudo pkg install docker"; \
+		echo "Enable with: sudo sysrc docker_enable=YES"; \
+		echo "Start with: sudo service docker start"; \
 		exit 1; \
 	fi
 
@@ -100,3 +110,47 @@ fetch-docs: resources/hy-syntax.html resources/hy-tutorial.html resources/pulumi
 # Clean documentation
 clean-docs:
 	rm -rf resources/
+
+# FreeBSD-specific targets
+.PHONY: freebsd-setup freebsd-test localstack-env
+
+freebsd-setup:
+	@echo "Setting up Pulumi on FreeBSD..."
+	@if ! kldstat | grep -q linux; then \
+		echo "Linux compatibility not loaded. Run: sudo kldload linux64"; \
+		exit 1; \
+	fi
+	@if [ ! -f ~/.local/bin/pulumi ]; then \
+		echo "Pulumi not installed. Downloading..."; \
+		cd /tmp && \
+		curl -LO https://get.pulumi.com/releases/sdk/pulumi-v3.145.0-linux-x64.tar.gz && \
+		tar -xzf pulumi-v3.145.0-linux-x64.tar.gz && \
+		mkdir -p ~/.local/bin && \
+		cp pulumi/* ~/.local/bin/ && \
+		echo "Pulumi installed to ~/.local/bin/"; \
+	else \
+		echo "Pulumi already installed at ~/.local/bin/pulumi"; \
+	fi
+	@echo "Add to PATH: export PATH=\$$HOME/.local/bin:\$$PATH"
+
+freebsd-test:
+	@./scripts/test-pulumi-freebsd.sh
+
+localstack-env:
+	@echo "# LocalStack environment variables"
+	@echo "export AWS_ENDPOINT=http://localhost:4566"
+	@echo "export AWS_ACCESS_KEY_ID=test"
+	@echo "export AWS_SECRET_ACCESS_KEY=test"
+	@echo "export AWS_REGION=us-east-1"
+	@echo ""
+	@echo "# Run: eval \$$(gmake localstack-env)"
+
+docker-setup:
+	@echo "Docker setup for FreeBSD:"
+	@echo "1. Install: sudo pkg install docker"
+	@echo "2. Enable: sudo sysrc docker_enable=YES"
+	@echo "3. Start: sudo service docker start"
+	@echo "4. Add user: sudo pw groupmod docker -m \$$USER"
+	@echo "5. Logout and login again"
+	@echo ""
+	@docker version 2>/dev/null || echo "Docker not running"

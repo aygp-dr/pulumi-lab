@@ -1,0 +1,391 @@
+# Running Pulumi on FreeBSD with Linux Compatibility
+
+## Important Note
+**Pulumi is NOT available in FreeBSD ports or pkg repositories.** The official Pulumi installer explicitly blocks FreeBSD installations with the error:
+```
+error: We're sorry, but it looks like Pulumi is not supported on your platform
+       We support 64-bit versions of Linux and macOS...
+```
+
+This guide provides a workaround using FreeBSD's Linux compatibility layer to run the Linux binary.
+
+## Overview
+Pulumi doesn't officially support FreeBSD, but it can run using FreeBSD's Linux compatibility layer. This guide shows how to set up and run Pulumi on FreeBSD 14.3-RELEASE.
+
+## Prerequisites
+
+### 1. Linux Compatibility Layer
+The Linux compatibility layer should already be loaded (check with `kldstat | grep linux`). If not:
+
+```bash
+# Load Linux compatibility modules
+sudo kldload linux64
+sudo kldload linux_common
+
+# Make persistent across reboots
+echo 'linux_enable="YES"' | sudo tee -a /etc/rc.conf
+```
+
+### 2. Linux Base System
+Install CentOS 7 base system (if not already installed):
+
+```bash
+sudo pkg install linux-c7-base
+```
+
+## Installation Steps
+
+### 1. Download Linux Pulumi Binary
+
+```bash
+# Create temp directory
+cd /tmp
+
+# Download latest Pulumi for Linux x64
+curl -LO https://get.pulumi.com/releases/sdk/pulumi-v3.145.0-linux-x64.tar.gz
+
+# Extract archive
+tar -xzf pulumi-v3.145.0-linux-x64.tar.gz
+```
+
+### 2. Install Pulumi Binaries
+
+```bash
+# Create local bin directory
+mkdir -p ~/.local/bin
+
+# Copy all Pulumi executables
+cp /tmp/pulumi/* ~/.local/bin/
+
+# Add to PATH (add to ~/.bashrc or ~/.profile for persistence)
+export PATH=$HOME/.local/bin:$PATH
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
+
+# Verify installation
+pulumi version
+```
+
+### 3. Install Python Dependencies
+
+```bash
+# Install Python packages (may be slow on FreeBSD)
+pip3 install --user pulumi pulumi-aws pulumi-github hy
+
+# Or use system packages if available
+sudo pkg install py311-grpcio py311-protobuf py311-pyyaml
+```
+
+## Running Pulumi Projects
+
+### Basic Setup
+
+```bash
+# Navigate to a Pulumi project
+cd experiments/006-s3-buckets-hy
+
+# Initialize a new stack
+pulumi stack init dev --secrets-provider passphrase
+
+# Set configuration
+pulumi config set aws:region us-west-2
+
+# Preview changes
+pulumi preview
+
+# Deploy infrastructure
+pulumi up
+```
+
+### Using tmux for Interactive Sessions
+
+Create a tmux session for long-running Pulumi operations:
+
+```bash
+#!/bin/bash
+# File: pulumi-tmux.sh
+
+# Create new tmux session for Pulumi
+tmux new-session -d -s pulumi-lab
+
+# Split window horizontally
+tmux split-window -h -t pulumi-lab
+
+# Set up first pane for Pulumi commands
+tmux send-keys -t pulumi-lab:0.0 'cd ~/ghq/github.com/aygp-dr/pulumi-lab' C-m
+tmux send-keys -t pulumi-lab:0.0 'export PATH=$HOME/.local/bin:$PATH' C-m
+tmux send-keys -t pulumi-lab:0.0 'pulumi login --local' C-m
+
+# Set up second pane for monitoring
+tmux send-keys -t pulumi-lab:0.1 'cd ~/ghq/github.com/aygp-dr/pulumi-lab' C-m
+tmux send-keys -t pulumi-lab:0.1 'watch -n 2 pulumi stack' C-m
+
+# Attach to session
+tmux attach-session -t pulumi-lab
+```
+
+### LocalStack Integration (AWS Testing)
+
+#### Docker Setup on FreeBSD
+
+```bash
+# Install/Update Docker on FreeBSD
+sudo pkg install docker
+# Or upgrade if already installed:
+sudo pkg upgrade docker  # e.g., 18.09.5_22 -> 18.09.5_26
+
+# Enable Docker service
+sudo sysrc docker_enable="YES"
+
+# Start Docker daemon
+sudo service docker start
+
+# Add user to docker group (logout/login required)
+sudo pw groupmod docker -m $USER
+
+# Verify Docker is running
+docker version
+docker ps
+```
+
+#### LocalStack Configuration
+
+```bash
+# Start LocalStack container
+docker run -d \
+  --name localstack \
+  -p 4566:4566 \
+  -p 4571:4571 \
+  -e SERVICES=s3,ec2,iam,lambda,dynamodb,sqs,sns \
+  -e DEBUG=1 \
+  -e DATA_DIR=/tmp/localstack/data \
+  -v /tmp/localstack:/tmp/localstack \
+  localstack/localstack:latest
+
+# Wait for LocalStack to be ready
+sleep 10
+docker logs localstack
+
+# Verify LocalStack is running
+curl http://localhost:4566/_localstack/health
+
+# Configure environment for LocalStack
+export AWS_ENDPOINT=http://localhost:4566
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_REGION=us-east-1
+
+# Test LocalStack with AWS CLI
+aws --endpoint-url=$AWS_ENDPOINT s3 mb s3://test-bucket
+aws --endpoint-url=$AWS_ENDPOINT s3 ls
+
+# Configure Pulumi for LocalStack
+pulumi config set aws:endpoints:s3 http://localhost:4566
+pulumi config set aws:endpoints:ec2 http://localhost:4566
+pulumi config set aws:endpoints:iam http://localhost:4566
+pulumi config set aws:skipCredentialsValidation true
+pulumi config set aws:skipRequestingAccountId true
+pulumi config set aws:s3ForcePathStyle true
+
+# Run Pulumi with LocalStack
+pulumi up --yes
+```
+
+#### Docker Management Commands
+
+```bash
+# Stop LocalStack
+docker stop localstack
+docker rm localstack
+
+# View LocalStack logs
+docker logs -f localstack
+
+# Clean up Docker resources
+docker system prune -a
+
+# Check Docker disk usage
+docker system df
+```
+
+## Working with Hy Projects
+
+### Running Hy-based Infrastructure Code
+
+```bash
+# Test Hy installation
+hy -c '(print "Hy works on FreeBSD!")'
+
+# Run Hy Pulumi project
+cd experiments/003-aws-ec2-hy
+pulumi stack init freebsd-test --secrets-provider passphrase
+pulumi up
+```
+
+### Example Hy Pulumi Program
+
+```hy
+;; File: __main__.hy
+(import pulumi)
+(import [pulumi-aws :as aws])
+
+;; Create S3 bucket
+(setv bucket (aws.s3.BucketV2 "my-bucket"
+  :tags {:Environment "dev"
+         :Platform "FreeBSD"}))
+
+;; Export bucket name
+(pulumi.export "bucket_name" (. bucket bucket))
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **"No language plugin found" error**
+   ```bash
+   # Ensure all Pulumi binaries are in PATH
+   ls ~/.local/bin/pulumi*
+   # Should show: pulumi, pulumi-language-python, etc.
+   ```
+
+2. **Python import errors**
+   ```bash
+   # Install missing Python packages
+   pip3 install --user <package-name>
+   ```
+
+3. **Permission denied errors**
+   ```bash
+   # Ensure executables have correct permissions
+   chmod +x ~/.local/bin/pulumi*
+   ```
+
+4. **Slow performance**
+   - Linux compatibility layer adds overhead
+   - Consider using Docker containers for better performance
+   - Use remote backends for state storage
+
+### Performance Optimization
+
+```bash
+# Use local file backend for faster operations
+pulumi login --local
+
+# Disable progress display for faster execution
+pulumi up --suppress-progress
+
+# Use background operations
+pulumi up --async
+```
+
+## Advanced Setup
+
+### Automated Installation Script
+
+```bash
+#!/bin/sh
+# File: install-pulumi-freebsd.sh
+
+set -e
+
+PULUMI_VERSION="3.145.0"
+INSTALL_DIR="$HOME/.local/bin"
+
+echo "Installing Pulumi ${PULUMI_VERSION} on FreeBSD..."
+
+# Check Linux compatibility
+if ! kldstat | grep -q linux; then
+    echo "Linux compatibility not loaded. Run: sudo kldload linux64"
+    exit 1
+fi
+
+# Create install directory
+mkdir -p "${INSTALL_DIR}"
+
+# Download and extract Pulumi
+cd /tmp
+curl -LO "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz"
+tar -xzf "pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz"
+
+# Install binaries
+cp pulumi/* "${INSTALL_DIR}/"
+chmod +x "${INSTALL_DIR}"/pulumi*
+
+# Update PATH
+if ! echo "$PATH" | grep -q "${INSTALL_DIR}"; then
+    echo "export PATH=${INSTALL_DIR}:\$PATH" >> ~/.bashrc
+    export PATH="${INSTALL_DIR}:$PATH"
+fi
+
+# Verify installation
+"${INSTALL_DIR}/pulumi" version
+
+echo "Pulumi installed successfully!"
+echo "Run 'source ~/.bashrc' to update PATH in current shell"
+```
+
+### Using with GNU Make
+
+```makefile
+# Makefile additions for FreeBSD
+.PHONY: pulumi-setup pulumi-test
+
+pulumi-setup:
+	@echo "Setting up Pulumi on FreeBSD..."
+	@if ! command -v pulumi >/dev/null 2>&1; then \
+		sh install-pulumi-freebsd.sh; \
+	fi
+	@pulumi version
+
+pulumi-test:
+	@echo "Testing Pulumi installation..."
+	@pulumi login --local
+	@cd experiments/000-basics-hy && \
+		pulumi stack init test --secrets-provider passphrase || true && \
+		pulumi preview
+
+# Use gmake instead of make on FreeBSD
+test-all: pulumi-setup
+	gmake pulumi-test
+```
+
+## CI/CD Integration
+
+For production deployments, consider:
+
+1. **GitHub Actions**: Deploy from Linux runners
+2. **Docker**: Run Pulumi in Linux containers
+3. **Remote Development**: Use cloud VMs for deployment
+
+### Docker-based Deployment
+
+```bash
+# Dockerfile for Pulumi on FreeBSD host
+FROM pulumi/pulumi:latest
+
+WORKDIR /workspace
+COPY . .
+
+RUN pip install hy pulumi-aws pulumi-github
+
+ENTRYPOINT ["pulumi"]
+```
+
+```bash
+# Run Pulumi in Docker
+docker build -t pulumi-freebsd .
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e PULUMI_ACCESS_TOKEN \
+  pulumi-freebsd up
+```
+
+## Summary
+
+- ✅ Pulumi runs on FreeBSD via Linux compatibility layer
+- ✅ All core Pulumi features work (preview, up, destroy)
+- ✅ Python and Hy language support confirmed
+- ⚠️ Performance may be slower than native Linux
+- ⚠️ Some edge cases may not work perfectly
+- 💡 Use tmux for interactive long-running operations
+- 💡 Consider Docker for production deployments
