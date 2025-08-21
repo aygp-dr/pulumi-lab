@@ -1,0 +1,6 @@
+name: github-org-management
+description: GitHub organization-wide management comparing gh CLI to Pulumi
+runtime:
+  name: python
+  options:
+    virtualenv: venv

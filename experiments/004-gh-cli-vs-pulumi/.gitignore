@@ -1,0 +1,14 @@
+# Pulumi
+Pulumi.*.yaml
+.pulumi/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Local repos directory
+repos/
+
+# Environment
+.env
