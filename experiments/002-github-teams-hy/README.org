@@ -1,0 +1,92 @@
+#+TITLE: GitHub Provider Deep Dive with Hy
+#+AUTHOR: aygp-dr
+#+DATE: 2025-08-20
+
+* Overview
+
+Comprehensive exploration of GitHub provider resources, mapping common ~gh~ CLI operations to Pulumi infrastructure code.
+
+* Core Resources Coverage
+
+Based on [[https://www.pulumi.com/registry/packages/github/api-docs/][GitHub Provider API Docs]], this experiment demonstrates the most frequently used resources.
+
+** Repository Management
+- ~Repository~ - Create and manage repos
+- ~RepositoryFile~ - Manage files in repos
+- ~RepositoryWebhook~ - Configure webhooks
+- ~RepositoryCollaborator~ - Add collaborators
+- ~BranchProtection~ - Protect branches
+- ~RepositoryDeployKey~ - Add deploy keys
+
+** Team & Organization
+- ~Team~ - Create teams
+- ~TeamRepository~ - Grant team access
+- ~TeamMembership~ - Add team members
+- ~Membership~ - Org membership
+- ~OrganizationSettings~ - Configure org
+
+** Pull Requests & Issues
+- ~RepositoryPullRequest~ - Create PRs
+- ~Issue~ - Create issues
+- ~IssueLabel~ - Manage labels
+- ~RepositoryMilestone~ - Create milestones
+
+** Actions & Secrets
+- ~ActionsSecret~ - Repository secrets
+- ~ActionsVariable~ - Repository variables
+- ~ActionsOrganizationSecret~ - Org-wide secrets
+- ~ActionsRepositoryPermissions~ - Actions permissions
+
+** Common gh CLI → Pulumi Mappings
+
+| gh Command | Pulumi Resource |
+|------------|-----------------|
+| ~gh repo create~ | ~github.Repository~ |
+| ~gh repo clone~ | N/A (use git) |
+| ~gh pr create~ | ~github.RepositoryPullRequest~ |
+| ~gh issue create~ | ~github.Issue~ |
+| ~gh secret set~ | ~github.ActionsSecret~ |
+| ~gh api~ | ~github.getRestApi~ function |
+| ~gh release create~ | ~github.Release~ |
+| ~gh repo fork~ | ~github.Repository~ with source |
+| ~gh workflow run~ | N/A (use Actions API) |
+| ~gh repo view~ | ~github.getRepository~ function |
+
+* Implementation
+
+The experiment creates a complete GitHub project structure including:
+1. Private repository with README
+2. Team structure (dev, ops, security)
+3. Branch protection rules
+4. Issue labels and milestones
+5. Actions secrets and variables
+6. Webhooks for CI/CD
+7. Deploy keys for automation
+
+* Usage
+
+#+begin_src bash
+# Ensure GitHub token is configured
+export GITHUB_TOKEN=ghp_...
+
+# Preview the infrastructure
+pulumi preview
+
+# Create all resources
+pulumi up
+
+# View outputs
+pulumi stack output
+
+# Clean up
+pulumi destroy
+#+end_src
+
+* Resource Functions
+
+Key data retrieval functions demonstrated:
+- ~getRepository~ - Fetch repo details
+- ~getTeam~ - Get team information
+- ~getOrganization~ - Org metadata
+- ~getRestApi~ - Direct API calls
+- ~getActionsSecrets~ - List secrets
