@@ -1,26 +1,28 @@
-#+TITLE: GitHub Provider with TypeScript
+#+TITLE: GitHub Provider with Hy
 #+AUTHOR: aygp-dr
 #+DATE: 2025-08-20
 
 * Overview
 
-Basic GitHub provider example using TypeScript to create and manage GitHub repositories.
+GitHub provider example using Hy to create private repositories with teams and branch protection.
+Implements the [0:20-0:30] GitHub Provider Deep Dive pattern with automatic random suffixes.
 
 * Prerequisites
 
-- Node.js 22.14.0+
+- Python 3.11+ with Hy 1.0.0+
 - Pulumi CLI 3.145.0+
 - GitHub Personal Access Token
-- npm or yarn
+- pulumi-github>=6.0.0
 
 * Setup
 
 #+begin_src bash
 # Install dependencies
-npm install
+gmake setup
 
-# Configure GitHub token
-pulumi config set github:token YOUR_TOKEN --secret
+# Configure GitHub token in .env
+cp .env.example .env
+# Edit .env and add your GitHub token
 
 # Select stack
 pulumi stack select dev
@@ -29,16 +31,24 @@ pulumi stack select dev
 * Usage
 
 #+begin_src bash
-# Preview changes
-pulumi preview
+# Quick run (creates repo with teams)
+gmake run
 
-# Deploy
-pulumi up
-
-# Destroy
-pulumi destroy
+# Or step by step:
+gmake check   # Verify dependencies
+gmake preview # Preview changes
+gmake up      # Deploy
+gmake destroy # Clean up
 #+end_src
+
+* Features
+
+- Creates private repository with random suffix
+- Sets up engineering and ops teams
+- Configures team permissions (push/admin)
+- Adds branch protection to main branch
+- Auto-initializes with Python .gitignore and MIT license
 
 * Note
 
-This is the only TypeScript experiment in the repository. All other experiments use Hy (Lisp for Python).
+Converted from TypeScript to Hy for consistency with other experiments.

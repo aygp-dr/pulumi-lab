@@ -1,0 +1,14 @@
+# Environment variables
+.env
+
+# Pulumi
+Pulumi.*.yaml
+.pulumi/
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (keeping for legacy)
+node_modules/
+package-lock.json
