@@ -9,7 +9,7 @@
 [[https://img.shields.io/badge/hy-1.0.0-purple.svg]]
 [[https://img.shields.io/badge/pulumi-3.145.0-blueviolet.svg]]
 [[https://img.shields.io/badge/platform-FreeBSD_14.3-red.svg]]
-[[https://img.shields.io/badge/localstack-supported-green.svg]]
+[[https://img.shields.io/badge/localstack-partial-yellow.svg]]
 
 * Overview
 
@@ -20,17 +20,20 @@ This is an experimental exploration of Pulumi Infrastructure as Code with Hy (Li
 - Python 3.11.11
 - Hy 1.0.0  
 - Pulumi 3.145.0 (via Linux compatibility layer)
-- Docker 18.09.5_26
-- LocalStack for AWS emulation
+- Docker 18.09.5_26 (client only - no daemon on FreeBSD)
+- Minio 2025.06.13 for S3 emulation (LocalStack alternative)
 
 ** FreeBSD Compatibility Note
 
-*Important:* Pulumi doesn't officially support FreeBSD and is not available in ports/pkg. This project runs Pulumi 3.145.0 via FreeBSD's Linux compatibility layer. See [[file:docs/FREEBSD_PULUMI_SETUP.md][FreeBSD Setup Guide]] for installation instructions.
+*Important:* Pulumi doesn't officially support FreeBSD and is not available in ports/pkg. This project runs Pulumi 3.145.0 via FreeBSD's Linux compatibility layer. Docker daemon doesn't run natively on FreeBSD, so we use Minio as a LocalStack alternative for S3 emulation. See [[file:docs/FREEBSD_PULUMI_SETUP.md][FreeBSD Setup Guide]] and [[file:docs/MINIO_ALTERNATIVE.md][Minio Setup]] for details.
 
 #+begin_src bash :dir . :results verbatim
 # Quick FreeBSD setup (requires Linux compatibility layer)
 gmake freebsd-setup
 gmake freebsd-test
+
+# Start Minio for S3 emulation (LocalStack alternative)
+./scripts/start-minio.sh
 #+end_src
 
 ** Quick Start

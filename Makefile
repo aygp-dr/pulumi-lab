@@ -4,10 +4,22 @@ help:
 	@echo "Available targets:"
 	@echo "  install         - Install dependencies with uv"
 	@echo "  setup-hy        - Set up Hy language environment"
-	@echo "  localstack-start - Start LocalStack for AWS testing"
-	@echo "  localstack-stop  - Stop LocalStack"
 	@echo "  test            - Run tests"
 	@echo "  clean           - Clean build artifacts"
+	@echo ""
+	@echo "AWS Emulation (FreeBSD):"
+	@echo "  minio-start     - Start Minio S3 storage (LocalStack alternative)"
+	@echo "  minio-stop      - Stop Minio"
+	@echo "  minio-test      - Test Minio S3 connection"
+	@echo "  minio-env       - Show Minio environment variables"
+	@echo ""
+	@echo "AWS Emulation (requires Docker daemon - not available on FreeBSD):"
+	@echo "  localstack-start - Start LocalStack (needs Docker)"
+	@echo "  localstack-stop  - Stop LocalStack"
+	@echo ""
+	@echo "FreeBSD-specific:"
+	@echo "  freebsd-setup   - Install Pulumi on FreeBSD"
+	@echo "  freebsd-test    - Test Pulumi installation"
 
 install:
 	uv pip install -e .
@@ -112,7 +124,7 @@ clean-docs:
 	rm -rf resources/
 
 # FreeBSD-specific targets
-.PHONY: freebsd-setup freebsd-test localstack-env
+.PHONY: freebsd-setup freebsd-test localstack-env minio-start minio-stop minio-test
 
 freebsd-setup:
 	@echo "Setting up Pulumi on FreeBSD..."
@@ -153,4 +165,40 @@ docker-setup:
 	@echo "4. Add user: sudo pw groupmod docker -m \$$USER"
 	@echo "5. Logout and login again"
 	@echo ""
-	@docker version 2>/dev/null || echo "Docker not running"
+	@echo "NOTE: Docker daemon doesn't run natively on FreeBSD!"
+	@echo "Use Minio instead: gmake minio-start"
+	@echo ""
+	@docker version 2>/dev/null || echo "Docker client installed, but no daemon available"
+
+# Minio targets for S3 emulation (LocalStack alternative on FreeBSD)
+minio-start:
+	@echo "Starting Minio S3-compatible storage..."
+	@if command -v minio >/dev/null 2>&1; then \
+		./scripts/start-minio.sh; \
+	else \
+		echo "Minio not installed. Install with: sudo pkg install minio"; \
+		exit 1; \
+	fi
+
+minio-stop:
+	@echo "Stopping Minio..."
+	@pkill minio 2>/dev/null || echo "Minio not running"
+	@echo "Minio stopped"
+
+minio-test:
+	@echo "Testing Minio S3 connection..."
+	@if pgrep minio >/dev/null 2>&1; then \
+		AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
+		aws --endpoint-url=http://localhost:9000 s3 ls || echo "Connection failed"; \
+	else \
+		echo "Minio not running. Start with: gmake minio-start"; \
+	fi
+
+minio-env:
+	@echo "# Minio S3 environment variables"
+	@echo "export AWS_ENDPOINT=http://localhost:9000"
+	@echo "export AWS_ACCESS_KEY_ID=minioadmin"
+	@echo "export AWS_SECRET_ACCESS_KEY=minioadmin"
+	@echo "export AWS_REGION=us-east-1"
+	@echo ""
+	@echo "# Run: eval \$$(gmake minio-env)"
