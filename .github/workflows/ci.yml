@@ -44,4 +44,4 @@ jobs:
           find experiments -name "*.hy" -type f | head -5 | while read f; do
             echo "Checking: $f"
             hy -c "(import hy.reader) (hy.reader.read (open \"$f\").read())" || exit 1
-          done
+          done# CI Test 1
