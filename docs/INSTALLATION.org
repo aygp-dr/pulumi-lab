@@ -1,25 +1,25 @@
-# Installation Guide
+* Installation Guide
 
-## Prerequisites
+** Prerequisites
 
-### Required Software
+*** Required Software
 
-1. **Python 3.11+**
-   ```bash
+1. *Python 3.11+*
+   #+begin_src bash
    python --version  # Should show 3.11 or higher
-   ```
+   #+end_src
 
-2. **uv (Python package manager)**
-   ```bash
+2. *uv (Python package manager)*
+   #+begin_src bash
    # Install uv
    curl -LsSf https://astral.sh/uv/install.sh | sh
    
    # Or with pip
    pip install uv
-   ```
+   #+end_src
 
-3. **Pulumi CLI**
-   ```bash
+3. *Pulumi CLI*
+   #+begin_src bash
    # Install Pulumi
    curl -fsSL https://get.pulumi.com | sh
    
@@ -28,28 +28,28 @@
    
    # Verify installation
    pulumi version
-   ```
+   #+end_src
 
-4. **Docker** (for LocalStack)
-   ```bash
+4. *Docker* (for LocalStack)
+   #+begin_src bash
    docker --version  # Required for LocalStack
-   ```
+   #+end_src
 
-5. **Emacs 30+** (optional, for org-mode integration)
-   ```bash
+5. *Emacs 30+* (optional, for org-mode integration)
+   #+begin_src bash
    emacs --version  # Should show 30.1 or higher
-   ```
+   #+end_src
 
-## Project Setup
+** Project Setup
 
-### 1. Clone the Repository
-```bash
+*** 1. Clone the Repository
+#+begin_src bash
 git clone https://github.com/aygp-dr/pulumi-lab.git
 cd pulumi-lab
-```
+#+end_src
 
-### 2. Create Virtual Environment and Install Dependencies
-```bash
+*** 2. Create Virtual Environment and Install Dependencies
+#+begin_src bash
 # Using make (recommended)
 make install setup-hy
 
@@ -57,12 +57,12 @@ make install setup-hy
 uv venv
 source .venv/bin/activate  # On Unix/macOS
 uv pip install -e .
-```
+#+end_src
 
-### 3. Configure Environment
+*** 3. Configure Environment
 
-#### Using direnv (recommended)
-```bash
+**** Using direnv (recommended)
+#+begin_src bash
 # Install direnv
 brew install direnv  # macOS
 apt-get install direnv  # Ubuntu/Debian
@@ -71,10 +71,10 @@ apt-get install direnv  # Ubuntu/Debian
 direnv allow .
 
 # Environment will auto-load when entering directory
-```
+#+end_src
 
-#### Manual Configuration
-```bash
+**** Manual Configuration
+#+begin_src bash
 # Add to your shell profile
 export PATH="$HOME/.pulumi/bin:$PATH"
 export PULUMI_BACKEND_URL="file://~/.pulumi"
@@ -82,19 +82,19 @@ export AWS_ENDPOINT_URL="http://localhost:4566"
 export AWS_ACCESS_KEY_ID="test"
 export AWS_SECRET_ACCESS_KEY="test"
 export AWS_DEFAULT_REGION="us-east-1"
-```
+#+end_src
 
-## Python Dependencies
+** Python Dependencies
 
-### Core Dependencies
-- **pulumi**: Infrastructure as Code SDK
-- **pulumi-aws**: AWS provider for Pulumi
-- **pulumi-github**: GitHub provider for Pulumi
-- **hy**: Lisp dialect for Python
-- **boto3**: AWS SDK for Python
+*** Core Dependencies
+- *pulumi*: Infrastructure as Code SDK
+- *pulumi-aws*: AWS provider for Pulumi
+- *pulumi-github*: GitHub provider for Pulumi
+- *hy*: Lisp dialect for Python
+- *boto3*: AWS SDK for Python
 
-### Installation with uv
-```bash
+*** Installation with uv
+#+begin_src bash
 # Core Pulumi packages
 uv add pulumi pulumi-aws pulumi-github
 
@@ -106,12 +106,12 @@ uv add boto3
 
 # Development tools
 uv add --dev pytest ruff black mypy
-```
+#+end_src
 
-## LocalStack Setup
+** LocalStack Setup
 
-### 1. Start LocalStack
-```bash
+*** 1. Start LocalStack
+#+begin_src bash
 # Using docker
 docker run -d \
   --name localstack \
@@ -121,10 +121,10 @@ docker run -d \
 
 # Or using make
 make localstack-start
-```
+#+end_src
 
-### 2. Verify LocalStack
-```bash
+*** 2. Verify LocalStack
+#+begin_src bash
 # Check if running
 docker ps | grep localstack
 
@@ -133,32 +133,32 @@ aws --endpoint-url=http://localhost:4566 s3 ls
 
 # Or use our Hy script
 hy scripts/check-localstack.hy
-```
+#+end_src
 
-## Hy Language Setup
+** Hy Language Setup
 
-### 1. Verify Hy Installation
-```bash
+*** 1. Verify Hy Installation
+#+begin_src bash
 # Check Hy REPL
 hy --version
 
 # Test Hy script
 hy -c "(print \"Hy is working!\")"
-```
+#+end_src
 
-### 2. Run Test Scripts
-```bash
+*** 2. Run Test Scripts
+#+begin_src bash
 # Test S3 operations in LocalStack
 hy scripts/test-s3-localstack.hy
 
 # Check all LocalStack resources
 hy scripts/check-localstack.hy
-```
+#+end_src
 
-## Emacs Integration (Optional)
+** Emacs Integration (Optional)
 
-### 1. Install pulumi-lab.el
-```elisp
+*** 1. Install pulumi-lab.el
+#+begin_src elisp
 ;; Add to your init.el
 (add-to-list 'load-path "/path/to/pulumi-lab")
 (require 'pulumi-lab)
@@ -167,28 +167,28 @@ hy scripts/check-localstack.hy
 (use-package pulumi-lab
   :load-path "/path/to/pulumi-lab"
   :hook ((python-mode org-mode hy-mode) . pulumi-lab-enable-for-project))
-```
+#+end_src
 
-### 2. Install Emacs Dependencies
-```elisp
+*** 2. Install Emacs Dependencies
+#+begin_src elisp
 ;; Install from MELPA
 M-x package-install RET hy-mode RET
 M-x package-install RET lsp-mode RET
 M-x package-install RET company RET
 M-x package-install RET flycheck RET
 M-x package-install RET projectile RET
-```
+#+end_src
 
-### 3. Auto-install Missing Packages
-```elisp
+*** 3. Auto-install Missing Packages
+#+begin_src elisp
 ;; Run in Emacs
 M-x pulumi-lab-ensure-packages
-```
+#+end_src
 
-## Verification
+** Verification
 
-### 1. Check All Dependencies
-```bash
+*** 1. Check All Dependencies
+#+begin_src bash
 # Run verification script
 cat > check_deps.py << 'EOF'
 import sys
@@ -214,84 +214,84 @@ print("\n✅ All dependencies installed!")
 EOF
 
 python check_deps.py
-```
+#+end_src
 
-### 2. Test Pulumi Setup
-```bash
+*** 2. Test Pulumi Setup
+#+begin_src bash
 # Login to local backend
 pulumi login --local
 
 # Check config
 pulumi whoami
-```
+#+end_src
 
-### 3. Test LocalStack Integration
-```bash
+*** 3. Test LocalStack Integration
+#+begin_src bash
 # Simple S3 test
 hy scripts/test-s3-localstack.hy
 
 # Full infrastructure check
 hy scripts/check-localstack.hy
-```
+#+end_src
 
-## Troubleshooting
+** Troubleshooting
 
-### Common Issues
+*** Common Issues
 
-1. **Pulumi not found**
-   ```bash
+1. *Pulumi not found*
+   #+begin_src bash
    # Add to PATH
    export PATH="$HOME/.pulumi/bin:$PATH"
-   ```
+   #+end_src
 
-2. **Hy import errors**
-   ```bash
+2. *Hy import errors*
+   #+begin_src bash
    # Reinstall Hy
    uv pip uninstall hy
    uv add hy
-   ```
+   #+end_src
 
-3. **LocalStack connection refused**
-   ```bash
+3. *LocalStack connection refused*
+   #+begin_src bash
    # Restart LocalStack
    docker restart localstack
    
    # Check logs
    docker logs localstack
-   ```
+   #+end_src
 
-4. **boto3 endpoint issues**
-   ```bash
+4. *boto3 endpoint issues*
+   #+begin_src bash
    # Ensure environment variables are set
    export AWS_ENDPOINT_URL="http://localhost:4566"
-   ```
+   #+end_src
 
-5. **Emacs org-babel errors**
-   ```bash
+5. *Emacs org-babel errors*
+   #+begin_src bash
    # Load pulumi-lab package
    M-x load-library RET pulumi-lab RET
-   ```
+   #+end_src
 
-## Next Steps
+** Next Steps
 
 1. Run your first experiment:
-   ```bash
+   #+begin_src bash
    cd experiments/001-github-provider
    pulumi up
-   ```
+   #+end_src
 
 2. Create a new experiment:
-   ```bash
+   #+begin_src bash
    # In Emacs
    M-x pulumi-lab-create-experiment
    
    # Or manually
    mkdir experiments/XXX-my-experiment
-   ```
+   #+end_src
 
 3. Test with Hy:
-   ```bash
+   #+begin_src bash
    # Run any Hy experiment
    cd experiments/002-github-teams-hy
    hy __main__.hy
-   ```
+   #+end_src

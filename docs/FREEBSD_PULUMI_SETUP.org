@@ -1,43 +1,43 @@
-# Running Pulumi on FreeBSD with Linux Compatibility
+* Running Pulumi on FreeBSD with Linux Compatibility
 
-## Important Note
-**Pulumi is NOT available in FreeBSD ports or pkg repositories.** The official Pulumi installer explicitly blocks FreeBSD installations with the error:
-```
+** Important Note
+*Pulumi is NOT available in FreeBSD ports or pkg repositories.* The official Pulumi installer explicitly blocks FreeBSD installations with the error:
+#+begin_src 
 error: We're sorry, but it looks like Pulumi is not supported on your platform
        We support 64-bit versions of Linux and macOS...
-```
+#+end_src
 
 This guide provides a workaround using FreeBSD's Linux compatibility layer to run the Linux binary.
 
-## Overview
+** Overview
 Pulumi doesn't officially support FreeBSD, but it can run using FreeBSD's Linux compatibility layer. This guide shows how to set up and run Pulumi on FreeBSD 14.3-RELEASE.
 
-## Prerequisites
+** Prerequisites
 
-### 1. Linux Compatibility Layer
-The Linux compatibility layer should already be loaded (check with `kldstat | grep linux`). If not:
+*** 1. Linux Compatibility Layer
+The Linux compatibility layer should already be loaded (check with =kldstat | grep linux=). If not:
 
-```bash
+#+begin_src bash
 # Load Linux compatibility modules
 sudo kldload linux64
 sudo kldload linux_common
 
 # Make persistent across reboots
 echo 'linux_enable="YES"' | sudo tee -a /etc/rc.conf
-```
+#+end_src
 
-### 2. Linux Base System
+*** 2. Linux Base System
 Install CentOS 7 base system (if not already installed):
 
-```bash
+#+begin_src bash
 sudo pkg install linux-c7-base
-```
+#+end_src
 
-## Installation Steps
+** Installation Steps
 
-### 1. Download Linux Pulumi Binary
+*** 1. Download Linux Pulumi Binary
 
-```bash
+#+begin_src bash
 # Create temp directory
 cd /tmp
 
@@ -46,11 +46,11 @@ curl -LO https://get.pulumi.com/releases/sdk/pulumi-v3.145.0-linux-x64.tar.gz
 
 # Extract archive
 tar -xzf pulumi-v3.145.0-linux-x64.tar.gz
-```
+#+end_src
 
-### 2. Install Pulumi Binaries
+*** 2. Install Pulumi Binaries
 
-```bash
+#+begin_src bash
 # Create local bin directory
 mkdir -p ~/.local/bin
 
@@ -63,23 +63,23 @@ echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
 
 # Verify installation
 pulumi version
-```
+#+end_src
 
-### 3. Install Python Dependencies
+*** 3. Install Python Dependencies
 
-```bash
+#+begin_src bash
 # Install Python packages (may be slow on FreeBSD)
 pip3 install --user pulumi pulumi-aws pulumi-github hy
 
 # Or use system packages if available
 sudo pkg install py311-grpcio py311-protobuf py311-pyyaml
-```
+#+end_src
 
-## Running Pulumi Projects
+** Running Pulumi Projects
 
-### Basic Setup
+*** Basic Setup
 
-```bash
+#+begin_src bash
 # Navigate to a Pulumi project
 cd experiments/006-s3-buckets-hy
 
@@ -94,13 +94,13 @@ pulumi preview
 
 # Deploy infrastructure
 pulumi up
-```
+#+end_src
 
-### Using tmux for Interactive Sessions
+*** Using tmux for Interactive Sessions
 
 Create a tmux session for long-running Pulumi operations:
 
-```bash
+#+begin_src bash
 #!/bin/bash
 # File: pulumi-tmux.sh
 
@@ -121,13 +121,13 @@ tmux send-keys -t pulumi-lab:0.1 'watch -n 2 pulumi stack' C-m
 
 # Attach to session
 tmux attach-session -t pulumi-lab
-```
+#+end_src
 
-### LocalStack Integration (AWS Testing)
+*** LocalStack Integration (AWS Testing)
 
-#### Docker Setup on FreeBSD
+**** Docker Setup on FreeBSD
 
-```bash
+#+begin_src bash
 # Install/Update Docker on FreeBSD
 sudo pkg install docker
 # Or upgrade if already installed:
@@ -145,11 +145,11 @@ sudo pw groupmod docker -m $USER
 # Verify Docker is running
 docker version
 docker ps
-```
+#+end_src
 
-#### LocalStack Configuration
+**** LocalStack Configuration
 
-```bash
+#+begin_src bash
 # Start LocalStack container
 docker run -d \
   --name localstack \
@@ -188,11 +188,11 @@ pulumi config set aws:s3ForcePathStyle true
 
 # Run Pulumi with LocalStack
 pulumi up --yes
-```
+#+end_src
 
-#### Docker Management Commands
+**** Docker Management Commands
 
-```bash
+#+begin_src bash
 # Stop LocalStack
 docker stop localstack
 docker rm localstack
@@ -205,13 +205,13 @@ docker system prune -a
 
 # Check Docker disk usage
 docker system df
-```
+#+end_src
 
-## Working with Hy Projects
+** Working with Hy Projects
 
-### Running Hy-based Infrastructure Code
+*** Running Hy-based Infrastructure Code
 
-```bash
+#+begin_src bash
 # Test Hy installation
 hy -c '(print "Hy works on FreeBSD!")'
 
@@ -219,11 +219,11 @@ hy -c '(print "Hy works on FreeBSD!")'
 cd experiments/003-aws-ec2-hy
 pulumi stack init freebsd-test --secrets-provider passphrase
 pulumi up
-```
+#+end_src
 
-### Example Hy Pulumi Program
+*** Example Hy Pulumi Program
 
-```hy
+#+begin_src hy
 ;; File: __main__.hy
 (import pulumi)
 (import [pulumi-aws :as aws])
@@ -235,39 +235,39 @@ pulumi up
 
 ;; Export bucket name
 (pulumi.export "bucket_name" (. bucket bucket))
-```
+#+end_src
 
-## Troubleshooting
+** Troubleshooting
 
-### Common Issues and Solutions
+*** Common Issues and Solutions
 
-1. **"No language plugin found" error**
-   ```bash
+1. *"No language plugin found" error*
+   #+begin_src bash
    # Ensure all Pulumi binaries are in PATH
    ls ~/.local/bin/pulumi*
    # Should show: pulumi, pulumi-language-python, etc.
-   ```
+   #+end_src
 
-2. **Python import errors**
-   ```bash
+2. *Python import errors*
+   #+begin_src bash
    # Install missing Python packages
    pip3 install --user <package-name>
-   ```
+   #+end_src
 
-3. **Permission denied errors**
-   ```bash
+3. *Permission denied errors*
+   #+begin_src bash
    # Ensure executables have correct permissions
    chmod +x ~/.local/bin/pulumi*
-   ```
+   #+end_src
 
-4. **Slow performance**
+4. *Slow performance*
    - Linux compatibility layer adds overhead
    - Consider using Docker containers for better performance
    - Use remote backends for state storage
 
-### Performance Optimization
+*** Performance Optimization
 
-```bash
+#+begin_src bash
 # Use local file backend for faster operations
 pulumi login --local
 
@@ -276,13 +276,13 @@ pulumi up --suppress-progress
 
 # Use background operations
 pulumi up --async
-```
+#+end_src
 
-## Advanced Setup
+** Advanced Setup
 
-### Automated Installation Script
+*** Automated Installation Script
 
-```bash
+#+begin_src bash
 #!/bin/sh
 # File: install-pulumi-freebsd.sh
 
@@ -322,11 +322,11 @@ fi
 
 echo "Pulumi installed successfully!"
 echo "Run 'source ~/.bashrc' to update PATH in current shell"
-```
+#+end_src
 
-### Using with GNU Make
+*** Using with GNU Make
 
-```makefile
+#+begin_src makefile
 # Makefile additions for FreeBSD
 .PHONY: pulumi-setup pulumi-test
 
@@ -347,19 +347,19 @@ pulumi-test:
 # Use gmake instead of make on FreeBSD
 test-all: pulumi-setup
 	gmake pulumi-test
-```
+#+end_src
 
-## CI/CD Integration
+** CI/CD Integration
 
 For production deployments, consider:
 
-1. **GitHub Actions**: Deploy from Linux runners
-2. **Docker**: Run Pulumi in Linux containers
-3. **Remote Development**: Use cloud VMs for deployment
+1. *GitHub Actions*: Deploy from Linux runners
+2. *Docker*: Run Pulumi in Linux containers
+3. *Remote Development*: Use cloud VMs for deployment
 
-### Docker-based Deployment
+*** Docker-based Deployment
 
-```bash
+#+begin_src bash
 # Dockerfile for Pulumi on FreeBSD host
 FROM pulumi/pulumi:latest
 
@@ -369,18 +369,18 @@ COPY . .
 RUN pip install hy pulumi-aws pulumi-github
 
 ENTRYPOINT ["pulumi"]
-```
+#+end_src
 
-```bash
+#+begin_src bash
 # Run Pulumi in Docker
 docker build -t pulumi-freebsd .
 docker run -it --rm \
   -v $(pwd):/workspace \
   -e PULUMI_ACCESS_TOKEN \
   pulumi-freebsd up
-```
+#+end_src
 
-## Summary
+** Summary
 
 - ✅ Pulumi runs on FreeBSD via Linux compatibility layer
 - ✅ All core Pulumi features work (preview, up, destroy)
