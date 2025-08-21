@@ -115,11 +115,11 @@ f"Sum: {(+ 1 2)}" ; f-string with Hy expression
 (print (os.getcwd))
 
 ;; Import specific items
-(import [pathlib [Path]])
+(import pathlib [Path])
 (setv home (Path.home))
 
 ;; Import with alias
-(import [boto3 :as aws])
+(import boto3 :as aws)
 (setv s3 (aws.client "s3"))
 
 ;; One-shot import (hy.I)
@@ -154,7 +154,7 @@ f"Sum: {(+ 1 2)}" ; f-string with Hy expression
 #+begin_src hy :tangle pulumi-example.hy
 ;; Import Pulumi and AWS provider
 (import pulumi)
-(import [pulumi-aws :as aws])
+(import pulumi_aws :as aws)
 
 ;; Configuration
 (setv config (pulumi.Config))
@@ -369,7 +369,7 @@ f"Sum: {(+ 1 2)}" ; f-string with Hy expression
   bucket)
 
 ;; __main__.hy
-(import [resources.s3 [create-bucket-with-policy]])
+(import resources.s3 [create-bucket-with-policy])
 
 (setv website-bucket 
   (create-bucket-with-policy "website" True))
@@ -380,7 +380,7 @@ f"Sum: {(+ 1 2)}" ; f-string with Hy expression
 #+begin_src hy
 ;; test_infrastructure.hy
 (import unittest)
-(import [unittest.mock [Mock patch]])
+(import unittest.mock [Mock patch])
 
 (defclass TestBucketCreation [unittest.TestCase]
   (defn test-bucket-name-format [self]
