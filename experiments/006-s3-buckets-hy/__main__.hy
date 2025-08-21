@@ -1,6 +1,6 @@
-;; S3 Buckets example with Hy for LocalStack
+;; S3 Buckets example with Hy for LocalStack/Minio
 ;; Simplified version focusing on core S3 functionality
-;; Updated for Hy 1.0+ syntax
+;; Compatible with Hy 1.0.0+ and FreeBSD/macOS
 
 (import pulumi)
 (import pulumi_aws :as aws)
