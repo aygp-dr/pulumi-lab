@@ -26,7 +26,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install hy==1.0.0 pulumi
+          pip install hy==1.0.0 pulumi pulumi-github
       
       - name: Verify installations
         run: |
@@ -45,6 +45,9 @@ jobs:
             echo "Checking: $f"
             hy -c "(import hy.reader) (hy.reader.read (open \"$f\").read())" || exit 1
           done
-# CI Test 1
-# CI Test 2
-# CI Test 3
+      
+      - name: Test GitHub experiment imports
+        run: |
+          cd experiments/002-github-teams-hy
+          # Just test that the imports work
+          hy -c "(import pulumi) (import pulumi_github :as github) (print \"✅ GitHub imports work\")"
