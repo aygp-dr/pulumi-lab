@@ -52,3 +52,15 @@ jobs:
           cd experiments/002-github-teams-hy
           # Just test that the imports work
           hy -c "(import pulumi) (import pulumi_github :as github) (print \"✅ GitHub imports work\")"
+      
+      - name: Check GitHub token availability
+        run: |
+          if [ -n "${{ secrets.GITHUB_TOKEN }}" ]; then
+            echo "✅ GITHUB_TOKEN is available in CI"
+          else
+            echo "⚠️ GITHUB_TOKEN not found"
+          fi
+          # Test with GitHub CLI (should work with automatic token)
+          gh auth status || echo "Note: gh CLI not authenticated"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
