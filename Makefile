@@ -1,10 +1,11 @@
-.PHONY: help install test clean localstack-start localstack-stop setup-hy
+.PHONY: help install test clean localstack-start localstack-stop setup-hy ci
 
 help:
 	@echo "Available targets:"
 	@echo "  install         - Install dependencies with uv"
 	@echo "  setup-hy        - Set up Hy language environment"
 	@echo "  test            - Run tests"
+	@echo "  ci              - Test CI workflow locally"
 	@echo "  clean           - Clean build artifacts"
 	@echo ""
 	@echo "AWS Emulation (FreeBSD):"
@@ -122,6 +123,37 @@ fetch-docs: resources/hy-syntax.html resources/hy-tutorial.html resources/pulumi
 # Clean documentation
 clean-docs:
 	rm -rf resources/
+
+# Test CI workflow locally
+ci:
+	@echo "Testing CI workflow locally..."
+	@echo ""
+	@echo "1. Checking Python version:"
+	@python --version || python3 --version
+	@echo ""
+	@echo "2. Checking pip:"
+	@pip --version || pip3 --version
+	@echo ""
+	@echo "3. Checking Hy installation:"
+	@hy --version || echo "❌ Hy not installed - run: pip install hy==1.0.0"
+	@echo ""
+	@echo "4. Testing Hy syntax:"
+	@hy -c "(print \"✅ Hy is working!\")" || echo "❌ Hy test failed"
+	@echo ""
+	@echo "5. Checking Hy files exist:"
+	@find experiments -name "*.hy" -type f | head -5 | while read f; do echo "  ✓ $$f"; done
+	@echo ""
+	@echo "6. Testing GitHub imports:"
+	@cd experiments/002-github-teams-hy && \
+		hy -c "(import pulumi) (import pulumi_github :as github) (print \"✅ GitHub imports work\")" || \
+		echo "❌ GitHub imports failed - run: pip install pulumi pulumi-github"
+	@echo ""
+	@echo "7. Checking GitHub token:"
+	@if [ -n "$$GITHUB_TOKEN" ]; then \
+		echo "✅ GITHUB_TOKEN is set"; \
+	else \
+		echo "⚠️ GITHUB_TOKEN not set - some experiments may fail"; \
+	fi
 
 # FreeBSD-specific targets
 .PHONY: freebsd-setup freebsd-test localstack-env minio-start minio-stop minio-test
